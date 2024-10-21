@@ -42,8 +42,8 @@ class _MyAppState extends State<MyApp> {
           backgroundColor: Colors.blue,
           items: const <BottomNavigationBarItem>[
             BottomNavigationBarItem(icon: Icon(Icons.electric_meter), label: 'Meters'),
+                        BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
             BottomNavigationBarItem(icon: Icon(Icons.show_chart), label: 'Trends'),
-            BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
             BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
           ],
           currentIndex: _selectedIndex,
