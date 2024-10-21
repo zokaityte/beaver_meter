@@ -4,9 +4,9 @@ import 'meter_detail_page.dart';
 
 class MetersPage extends StatelessWidget {
   final List<Map<String, dynamic>> meters = [
-    {'name': 'Electricity', 'icon': Icons.bolt, 'color': Colors.yellow, 'lastReading': 'Oct 1, 2023'},
-    {'name': 'Water', 'icon': Icons.water, 'color': Colors.blue, 'lastReading': 'Sep 29, 2023'},
-    {'name': 'Gas', 'icon': Icons.fireplace, 'color': Colors.orange, 'lastReading': 'Sep 30, 2023'},
+    {'name': 'Electricity', 'icon': Icons.bolt, 'color': const Color.fromARGB(255, 173, 134, 5), 'lastReading': 'Oct 1, 2024'},
+    {'name': 'Water', 'icon': Icons.water, 'color': const Color.fromARGB(255, 84, 107, 126), 'lastReading': 'Sep 29, 2024'},
+    {'name': 'Gas', 'icon': Icons.fireplace, 'color': const Color.fromARGB(255, 207, 97, 46), 'lastReading': 'Sep 30, 2024'},
   ];
 
   @override
@@ -39,6 +39,7 @@ class MetersPage extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color.fromARGB(255, 157, 184, 177),
         onPressed: () {
           Navigator.push(context, MaterialPageRoute(builder: (context) => CreateMeterPage()));
         },
