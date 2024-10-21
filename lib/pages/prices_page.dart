@@ -26,31 +26,44 @@ class PricesPage extends StatelessWidget {
               itemCount: prices.length,
               itemBuilder: (context, index) {
                 final price = prices[index];
-                return ListTile(
-                  title: Text('Price: \$${price['pricePerUnit']} per unit'),
-                  subtitle: Text('Base Price: \$${price['basePrice']}\nValid from: ${price['validFrom']} to ${price['validTo']}'),
-                  onTap: () {
-                    // Navigate to the Edit Price Page
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => EditPricePage(price: price),
-                      ),
-                    );
-                  },
+                return Card(
+                  margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16), // Adjust spacing
+                  child: ListTile(
+                    title: Text('Price: \$${price['pricePerUnit']} per unit'),
+                    subtitle: Text('Base Price: \$${price['basePrice']}\nValid from: ${price['validFrom']} to ${price['validTo']}'),
+                    onTap: () {
+                      // Navigate to the Edit Price Page
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditPricePage(price: price),
+                        ),
+                      );
+                    },
+                  ),
                 );
               },
             ),
           ),
-          ElevatedButton(
-            onPressed: () {
-              // Navigate to the Create Price Page
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => CreatePricePage()),
-              );
-            },
-            child: Text('Add Price'),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Card(
+              color: Colors.blue, // Customize the card color
+              child: ListTile(
+                leading: Icon(Icons.add, color: Colors.white), // Add an icon
+                title: Text(
+                  'Add Price',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+                onTap: () {
+                  // Navigate to the Create Price Page
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => CreatePricePage()),
+                  );
+                },
+              ),
+            ),
           ),
         ],
       ),
