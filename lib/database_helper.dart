@@ -129,6 +129,17 @@ class DatabaseHelper {
     return null; // Return null if no meter is found
   }
 
+  // Fetch a single meter by ID
+  Future<Map<String, dynamic>?> getMeterById(int meterId) async {
+    final db = await database;
+    final result = await db.query(
+      'meters',
+      where: 'id = ?',
+      whereArgs: [meterId],
+    );
+    return result.isNotEmpty ? result.first : null;
+  }
+
   // Method to fetch all meters
   Future<List<Map<String, dynamic>>> getMeters() async {
     Database db = await database;
