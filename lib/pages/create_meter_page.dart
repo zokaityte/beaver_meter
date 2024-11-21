@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:beaver_meter/database_helper.dart';
 
 class CreateMeterPage extends StatefulWidget {
   @override
@@ -89,19 +90,35 @@ class _CreateMeterPageState extends State<CreateMeterPage> {
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                // Save the meter data here
-                final meterData = {
-                  'name': nameController.text,
-                  'unit': selectedUnit,
-                  'color': selectedColor,
-                  'icon': selectedIcon,
-                };
+              onPressed: () async {
+                String meterName = nameController.text;
 
-                // Log or save meterData
-                print(meterData);
+                if ([meterName, selectedUnit, selectedColor, selectedIcon].contains(null) || meterName.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('All fields must be filled.')),
+                  );
+                  return;
+                }
 
-                Navigator.pop(context);
+                bool nameExists = await DatabaseHelper().meterNameExists(meterName);
+
+                if (nameExists) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Meter with that name already exists. Please choose a different name.')),
+                  );
+                } else {
+                  final meterData = {
+                    'name': meterName,
+                    'unit': selectedUnit,
+                    'color': selectedColor?.value,
+                    'icon': selectedIcon?.codePoint,
+                  };
+
+                  await DatabaseHelper().insertMeter(meterData);
+                  print(meterData);
+
+                  Navigator.pop(context);
+                }
               },
               child: Text('Save'),
             ),
