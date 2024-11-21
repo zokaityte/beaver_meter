@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:beaver_meter/constants/config.dart';
 import 'package:beaver_meter/database_helper.dart';
+import 'package:flutter/material.dart';
 
 class CreateMeterPage extends StatefulWidget {
   @override
@@ -9,16 +10,8 @@ class CreateMeterPage extends StatefulWidget {
 class _CreateMeterPageState extends State<CreateMeterPage> {
   final TextEditingController nameController = TextEditingController();
 
-  // List of predefined units
-  final List<String> units = ['kWh', 'm³', 'liters', 'gallons'];
   String? selectedUnit;
-
-  // List of colors
-  final List<Color> colors = [Colors.red, Colors.green, Colors.blue, Colors.orange];
   Color? selectedColor;
-
-  // List of icons
-  final List<IconData> icons = [Icons.electric_bolt, Icons.water, Icons.fireplace, Icons.bolt];
   IconData? selectedIcon;
 
   @override
@@ -55,7 +48,7 @@ class _CreateMeterPageState extends State<CreateMeterPage> {
             DropdownButtonFormField<Color>(
               decoration: InputDecoration(labelText: 'Color'),
               value: selectedColor,
-              items: colors.map((Color color) {
+              items: meterColors.map((Color color) {
                 return DropdownMenuItem<Color>(
                   value: color,
                   child: Container(
@@ -76,7 +69,7 @@ class _CreateMeterPageState extends State<CreateMeterPage> {
             DropdownButtonFormField<IconData>(
               decoration: InputDecoration(labelText: 'Icon'),
               value: selectedIcon,
-              items: icons.map((IconData icon) {
+              items: meterIcons.map((IconData icon) {
                 return DropdownMenuItem<IconData>(
                   value: icon,
                   child: Icon(icon),

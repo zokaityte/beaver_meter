@@ -129,6 +129,12 @@ class DatabaseHelper {
     return null; // Return null if no meter is found
   }
 
+  // Method to fetch all meters
+  Future<List<Map<String, dynamic>>> getMeters() async {
+    Database db = await database;
+    return await db.query('meters');
+  }
+
   // Prices
   Future<int> insertPrice(Map<String, dynamic> price) async {
     Database db = await database;

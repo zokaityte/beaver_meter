@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';  // To format the date
+import 'package:intl/intl.dart';
+import 'package:beaver_meter/database_helper.dart';
 
 class CreateReadingPage extends StatefulWidget {
-  final Map<String, dynamic> meter;
+  final int meterId;
 
-  CreateReadingPage({required this.meter});
+  CreateReadingPage({required this.meterId});
 
   @override
   _CreateReadingPageState createState() => _CreateReadingPageState();
@@ -14,12 +15,21 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
   final TextEditingController readingValueController = TextEditingController();
   final TextEditingController readingDateController = TextEditingController();
   DateTime selectedDate = DateTime.now();
+  String meterName = 'Loading...'; // Placeholder for the meter name
 
   @override
   void initState() {
     super.initState();
-    // Prefill the date with the current date
+    _fetchMeterName(); // Fetch the meter name on initialization
     readingDateController.text = DateFormat('yyyy-MM-dd').format(selectedDate);
+  }
+
+  // Fetch the meter name using the meterId
+  Future<void> _fetchMeterName() async {
+    String? name = await DatabaseHelper().getMeterNameById(widget.meterId);
+    setState(() {
+      meterName = name ?? 'Unknown Meter';
+    });
   }
 
   // Method to show the date picker
@@ -38,10 +48,46 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
     }
   }
 
+  // Method to save the reading
+  Future<void> _saveReading(BuildContext context) async {
+    double? readingValue = double.tryParse(readingValueController.text);
+    String readingDate = readingDateController.text;
+
+    if (readingValue == null || readingDate.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please enter a valid reading value and date.')),
+      );
+      return;
+    }
+
+    // Create reading record
+    Map<String, dynamic> reading = {
+      'meter_id': widget.meterId,
+      'value': readingValue,
+      'date': readingDate,
+    };
+
+    // Insert into database
+    int result = await DatabaseHelper().insertReading(reading);
+
+    if (result != -1) {
+      // Success
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Reading added successfully!')),
+      );
+      Navigator.pop(context);
+    } else {
+      // Error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to add reading. Please try again.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Add Reading for ${widget.meter['name']}')),
+      appBar: AppBar(title: Text('Add Reading for $meterName')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -66,17 +112,14 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
                 labelText: 'Date',
                 suffixIcon: IconButton(
                   icon: Icon(Icons.calendar_today),
-                  onPressed: () => _selectDate(context),  // Open calendar
+                  onPressed: () => _selectDate(context), // Open calendar
                 ),
               ),
-              readOnly: true,  // Make the date field read-only so user cannot manually edit
+              readOnly: true, // Make the date field read-only so user cannot manually edit
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                // Add logic to save the reading
-                Navigator.pop(context);  // Close the page after saving
-              },
+              onPressed: () => _saveReading(context),
               child: Text('Save Reading'),
             ),
           ],
