@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'prices_page.dart';  // Import the Prices Page
-import 'create_reading_page.dart';  // Import the Create Reading Page
+import 'prices_page.dart'; // Import the Prices Page
+import 'create_reading_page.dart'; // Import the Create Reading Page
 
 class MeterDetailPage extends StatelessWidget {
   final Map<String, dynamic> meter;
@@ -9,8 +9,28 @@ class MeterDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String meterName = meter['name'] ?? 'Unknown Meter';
+    final IconData meterIcon = meter['icon'] != null
+        ? IconData(meter['icon'], fontFamily: 'MaterialIcons')
+        : Icons.device_unknown; // Fallback icon
+    final Color meterColor = meter['color'] != null
+        ? Color(meter['color']) // Assuming color is stored as ARGB integer
+        : Colors.grey; // Fallback color
+
     return Scaffold(
-      appBar: AppBar(title: Text(meter['name'])),
+      appBar: AppBar(
+        backgroundColor: meterColor,
+        title: Row(
+          children: [
+            Icon(meterIcon, color: Colors.white, size: 24),
+            SizedBox(width: 10),
+            Text(
+              meterName,
+              style: TextStyle(color: Colors.white),
+            ),
+          ],
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -66,7 +86,7 @@ class MeterDetailPage extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => PricesPage(meter: meter), // Navigate to Prices Page
+                      builder: (context) => PricesPage(meterId: meter['id']), // Pass meter ID
                     ),
                   );
                 },
@@ -82,7 +102,7 @@ class MeterDetailPage extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => CreateReadingPage(meter: meter),  // Navigate to Add Reading Page
+                      builder: (context) => CreateReadingPage(meterId: meter['id']), // Pass meter ID
                     ),
                   );
                 },

@@ -59,7 +59,7 @@ class _MetersPageState extends State<MetersPage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => MeterDetailPage(meterId: meter['id']),
+                      builder: (context) => MeterDetailPage(meter: meter),
                     ),
                   );
                 },
