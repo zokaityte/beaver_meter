@@ -1,23 +1,56 @@
 import 'package:flutter/material.dart';
 import 'create_price_page.dart'; // To create a new price
 import 'edit_price_page.dart';   // To edit an existing price
+import 'package:beaver_meter/database_helper.dart';
 
-class PricesPage extends StatelessWidget {
-  final Map<String, dynamic> meter;
+class PricesPage extends StatefulWidget {
+  final int meterId;
 
-  PricesPage({required this.meter});
+  PricesPage({required this.meterId});
 
-  // Dummy data for prices associated with the meter
-  final List<Map<String, dynamic>> prices = [
-    {'pricePerUnit': '0.12', 'basePrice': '5.00', 'validFrom': 'Jan 2023', 'validTo': 'Dec 2023'},
-    {'pricePerUnit': '0.10', 'basePrice': '4.50', 'validFrom': 'Jan 2022', 'validTo': 'Dec 2022'},
-  ];
+  @override
+  _PricesPageState createState() => _PricesPageState();
+}
+
+class _PricesPageState extends State<PricesPage> {
+  String? meterName;
+  List<Map<String, dynamic>> prices = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  // Load meter name and prices
+  Future<void> _loadData() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    final fetchedMeterName = await DatabaseHelper().getMeterNameById(widget.meterId);
+    final fetchedPrices = await DatabaseHelper().getPricesByMeterId(widget.meterId);
+
+    setState(() {
+      meterName = fetchedMeterName ?? 'Unknown Meter';
+      prices = fetchedPrices;
+      isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: Text('Loading...')),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Prices for ${meter['name']}'),
+        title: Text('Prices for $meterName'),
       ),
       body: Column(
         children: [
@@ -27,10 +60,12 @@ class PricesPage extends StatelessWidget {
               itemBuilder: (context, index) {
                 final price = prices[index];
                 return Card(
-                  margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16), // Adjust spacing
+                  margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                   child: ListTile(
-                    title: Text('Price: \$${price['pricePerUnit']} per unit'),
-                    subtitle: Text('Base Price: \$${price['basePrice']}\nValid from: ${price['validFrom']} to ${price['validTo']}'),
+                    title: Text('Price: \$${price['price_per_unit']} per unit'),
+                    subtitle: Text(
+                      'Base Price: \$${price['base_price']}\nValid from: ${price['valid_from']} to ${price['valid_to']}',
+                    ),
                     onTap: () {
                       // Navigate to the Edit Price Page
                       Navigator.push(
@@ -48,19 +83,22 @@ class PricesPage extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Card(
-              color: Colors.blue, // Customize the card color
+              color: Colors.blue,
               child: ListTile(
-                leading: Icon(Icons.add, color: Colors.white), // Add an icon
+                leading: Icon(Icons.add, color: Colors.white),
                 title: Text(
                   'Add Price',
                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
-                onTap: () {
-                  // Navigate to the Create Price Page
-                  Navigator.push(
+                onTap: () async {
+                  // Navigate to the Create Price Page and refresh when returning
+                  await Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => CreatePricePage()),
+                    MaterialPageRoute(
+                      builder: (context) => CreatePricePage(meterId: widget.meterId),
+                    ),
                   );
+                  _loadData(); // Refresh prices
                 },
               ),
             ),
