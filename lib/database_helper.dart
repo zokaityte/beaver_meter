@@ -144,11 +144,13 @@ class DatabaseHelper {
     return result.isNotEmpty ? result.first : null;
   }
 
-  // Method to fetch all meters
-  Future<List<Map<String, dynamic>>> getMeters() async {
+// Method to fetch all meters as Meter objects
+  Future<List<Meter>> getMeters() async {
     Database db = await database;
-    return await db.query('meters');
+    final List<Map<String, dynamic>> maps = await db.query('meters');
+    return maps.map((map) => Meter.fromMap(map)).toList();
   }
+
 
   // Prices
   Future<int> insertPrice(Price price) async {

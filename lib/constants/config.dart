@@ -24,4 +24,8 @@ const Map<String, String> unitDescriptions = {
 // List of icons
 final List<IconData> meterIcons = [Icons.electric_bolt, Icons.water, Icons.fireplace, Icons.bolt];
 // List of colors
-final List<Color> meterColors = [Colors.red, Colors.green, Colors.blue, Colors.orange];
+const List<Color> meterColors = [
+  Color(4283215696),
+  Color(4280391411),
+  Color(-7118842),
+  Color(-13728548)];

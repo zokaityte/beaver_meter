@@ -1,11 +1,12 @@
-// lib/pages/edit_meter_page.dart
 import 'package:flutter/material.dart';
+import 'package:beaver_meter/constants/config.dart';
 import 'package:beaver_meter/database_helper.dart';
+import 'package:beaver_meter/models/meter.dart';
 
 class EditMeterPage extends StatefulWidget {
-  final int meterId;
+  final Meter meter;
 
-  EditMeterPage({required this.meterId});
+  EditMeterPage({required this.meter});
 
   @override
   _EditMeterPageState createState() => _EditMeterPageState();
@@ -14,56 +15,79 @@ class EditMeterPage extends StatefulWidget {
 class _EditMeterPageState extends State<EditMeterPage> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
-  late TextEditingController _iconController;
-  late TextEditingController _colorController;
+  late String selectedUnit;
+  late Color selectedColor;
+  late IconData selectedIcon;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController();
-    _iconController = TextEditingController();
-    _colorController = TextEditingController();
-    _fetchMeterDetails();
-  }
+    _nameController = TextEditingController(text: widget.meter.name);
+    selectedUnit = widget.meter.unit;
 
-  Future<void> _fetchMeterDetails() async {
-    final db = DatabaseHelper();
-    final meter = await db.getMeterById(widget.meterId);
-
-    if (meter != null) {
-      setState(() {
-        _nameController.text = meter['name'] ?? '';
-        _iconController.text = meter['icon']?.toString() ?? '';
-        _colorController.text = meter['color']?.toString() ?? '';
-      });
-    }
+    // Convert ARGB int to Color for the dropdown
+    selectedColor = Color(widget.meter.color);
+    selectedIcon = IconData(widget.meter.icon, fontFamily: 'MaterialIcons');
   }
 
   Future<void> _updateMeter() async {
     if (_formKey.currentState!.validate()) {
       final db = DatabaseHelper();
-      await db.updateMeter(widget.meterId, {
-        'name': _nameController.text,
-        'icon': int.tryParse(_iconController.text) ?? 0,
-        'color': int.tryParse(_colorController.text) ?? 0,
-      });
-      Navigator.pop(context, true); // Return to previous screen with success
+      final updatedMeter = Meter(
+        id: widget.meter.id,
+        name: _nameController.text,
+        unit: selectedUnit,
+        color: selectedColor.value, // Convert Color to ARGB int
+        icon: selectedIcon.codePoint,
+      );
+
+      await db.updateMeter(updatedMeter.id!, updatedMeter.toMap());
+      Navigator.pop(context, true); // Return to the previous screen with success
     }
   }
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _iconController.dispose();
-    _colorController.dispose();
-    super.dispose();
+  Future<void> _deleteMeter() async {
+    final db = DatabaseHelper();
+
+    // Confirm deletion
+    bool? confirmDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Delete Meter'),
+        content: Text('Are you sure you want to delete this meter? All associated data will be lost.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false), // Cancel
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true), // Confirm
+            child: Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmDelete == true) {
+      await db.deleteMeter(widget.meter.id!); // Delete the meter and its associated data
+
+      // Navigate back to the MetersPage by popping all other routes
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Edit Meter'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.delete, color: Colors.red),
+            onPressed: _deleteMeter, // Trigger delete action
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -81,24 +105,56 @@ class _EditMeterPageState extends State<EditMeterPage> {
                   return null;
                 },
               ),
-              TextFormField(
-                controller: _iconController,
-                decoration: InputDecoration(labelText: 'Icon Code'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter an icon code';
-                  }
-                  return null;
+              SizedBox(height: 20),
+              DropdownButtonFormField<String>(
+                decoration: InputDecoration(labelText: 'Units'),
+                value: selectedUnit,
+                items: units.map((String unit) {
+                  return DropdownMenuItem<String>(
+                    value: unit,
+                    child: Text(unit),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    selectedUnit = newValue!;
+                  });
                 },
               ),
-              TextFormField(
-                controller: _colorController,
-                decoration: InputDecoration(labelText: 'Color Code'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a color code';
-                  }
-                  return null;
+              SizedBox(height: 20),
+              DropdownButtonFormField<Color>(
+                decoration: InputDecoration(labelText: 'Color'),
+                value: selectedColor,
+                items: meterColors.map((Color color) {
+                  return DropdownMenuItem<Color>(
+                    value: color,
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      color: color,
+                    ),
+                  );
+                }).toList(),
+                onChanged: (Color? newColor) {
+                  setState(() {
+                    selectedColor = newColor!;
+                  });
+                },
+              ),
+              SizedBox(height: 20),
+              DropdownButtonFormField<IconData>(
+                decoration: InputDecoration(labelText: 'Icon'),
+                value: selectedIcon,
+                items: meterIcons.map((IconData icon) {
+                  return DropdownMenuItem<IconData>(
+                    value: icon,
+                    child: Icon(icon),
+                  );
+                }).toList(),
+                onChanged: (IconData? newIcon) {
+                  setState(() {
+                    selectedIcon = newIcon!;
+                  });
                 },
               ),
               SizedBox(height: 20),
@@ -111,5 +167,11 @@ class _EditMeterPageState extends State<EditMeterPage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/meter.dart';
 import 'create_meter_page.dart';
 import 'meter_detail_page.dart';
 import 'package:beaver_meter/database_helper.dart';
@@ -9,7 +10,7 @@ class MetersPage extends StatefulWidget {
 }
 
 class _MetersPageState extends State<MetersPage> {
-  late Future<List<Map<String, dynamic>>> metersFuture;
+  late Future<List<Meter>> metersFuture;
 
   @override
   void initState() {
@@ -27,7 +28,7 @@ class _MetersPageState extends State<MetersPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: FutureBuilder<List<Map<String, dynamic>>>(
+      body: FutureBuilder<List<Meter>>(
         future: metersFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -59,23 +60,33 @@ class _MetersPageState extends State<MetersPage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => MeterDetailPage(meter: meter),
+                      builder: (context) => MeterDetailPage(meter: meter), // Pass Meter object
                     ),
                   );
                 },
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Color(meter['color']), // Assuming 'color' is stored as ARGB int
+                    color: Color(meter.color), // Convert ARGB int to Color
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(IconData(meter['icon'], fontFamily: 'MaterialIcons'), size: 50, color: Colors.white),
+                      Icon(
+                        IconData(meter.icon, fontFamily: 'MaterialIcons'),
+                        size: 50,
+                        color: Colors.white,
+                      ),
                       SizedBox(height: 10),
-                      Text(meter['name'], style: TextStyle(fontSize: 20, color: Colors.white)),
+                      Text(
+                        meter.name,
+                        style: TextStyle(fontSize: 20, color: Colors.white),
+                      ),
                       SizedBox(height: 10),
-                      Text('Last reading: ${meter['lastReading'] ?? 'N/A'}', style: TextStyle(fontSize: 14, color: Colors.white)),
+                      Text(
+                        'Last reading: N/A', // Replace with actual last reading if available
+                        style: TextStyle(fontSize: 14, color: Colors.white),
+                      ),
                     ],
                   ),
                 ),

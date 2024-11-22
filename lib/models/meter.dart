@@ -2,7 +2,7 @@ class Meter {
   final int? id;
   final String name;
   final String unit;
-  final int color;
+  final int color; // ARGB
   final int icon;
 
   Meter({

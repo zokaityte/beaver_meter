@@ -1,21 +1,19 @@
 import 'package:flutter/material.dart';
+import 'edit_meter_page.dart';
 import 'prices_page.dart'; // Import the Prices Page
 import 'create_reading_page.dart'; // Import the Create Reading Page
+import 'package:beaver_meter/models/meter.dart';
 
 class MeterDetailPage extends StatelessWidget {
-  final Map<String, dynamic> meter;
+  final Meter meter;
 
   MeterDetailPage({required this.meter});
 
   @override
   Widget build(BuildContext context) {
-    final String meterName = meter['name'] ?? 'Unknown Meter';
-    final IconData meterIcon = meter['icon'] != null
-        ? IconData(meter['icon'], fontFamily: 'MaterialIcons')
-        : Icons.device_unknown; // Fallback icon
-    final Color meterColor = meter['color'] != null
-        ? Color(meter['color']) // Assuming color is stored as ARGB integer
-        : Colors.grey; // Fallback color
+    final String meterName = meter.name;
+    final IconData meterIcon = IconData(meter.icon, fontFamily: 'MaterialIcons');
+    final Color meterColor = Color(meter.color); // Convert ARGB int to Color
 
     return Scaffold(
       appBar: AppBar(
@@ -86,7 +84,7 @@ class MeterDetailPage extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => PricesPage(meterId: meter['id']), // Pass meter ID
+                      builder: (context) => PricesPage(meterId: meter.id!), // Pass meter ID
                     ),
                   );
                 },
@@ -102,7 +100,7 @@ class MeterDetailPage extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => CreateReadingPage(meterId: meter['id']), // Pass meter ID
+                      builder: (context) => CreateReadingPage(meterId: meter.id!), // Pass meter ID
                     ),
                   );
                 },
@@ -114,7 +112,12 @@ class MeterDetailPage extends StatelessWidget {
                 leading: Icon(Icons.edit, color: Colors.red),
                 title: Text('Edit Meter'),
                 onTap: () {
-                  // Edit meter action
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EditMeterPage(meter: meter), // Pass the Meter object
+                    ),
+                  );
                 },
               ),
             ),
