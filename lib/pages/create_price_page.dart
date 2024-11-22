@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:beaver_meter/database_helper.dart';
+import 'package:beaver_meter/models/price.dart';
 
 class CreatePricePage extends StatefulWidget {
   final int meterId;
@@ -32,7 +33,7 @@ class _CreatePricePageState extends State<CreatePricePage> {
       setState(() {
         selectedValidFrom = pickedDate;
         validFromController.text = DateFormat('yyyy-MM-dd').format(pickedDate);
-        validToController.clear(); // Clear "Valid To" if "Valid From" changes
+        validToController.clear();
         selectedValidTo = null;
       });
     }
@@ -43,7 +44,7 @@ class _CreatePricePageState extends State<CreatePricePage> {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: selectedValidTo ?? DateTime.now(),
-      firstDate: selectedValidFrom ?? DateTime(2000), // Ensure "Valid To" is after "Valid From"
+      firstDate: selectedValidFrom ?? DateTime(2000),
       lastDate: DateTime.now().add(Duration(days: 365)),
     );
     if (pickedDate != null && pickedDate != selectedValidTo) {
@@ -75,14 +76,16 @@ class _CreatePricePageState extends State<CreatePricePage> {
       return;
     }
 
-    Map<String, dynamic> price = {
-      'price_per_unit': pricePerUnit,
-      'base_price': basePrice,
-      'valid_from': validFrom,
-      'valid_to': validTo,
-      'meter_id': widget.meterId,
-    };
+    // Create a Price object
+    final price = Price(
+      pricePerUnit: pricePerUnit,
+      basePrice: basePrice,
+      validFrom: validFrom,
+      validTo: validTo,
+      meterId: widget.meterId,
+    );
 
+    // Insert the Price object into the database
     int result = await DatabaseHelper().insertPrice(price);
 
     if (result != -1) {
@@ -133,12 +136,12 @@ class _CreatePricePageState extends State<CreatePricePage> {
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.calendar_today),
                   onPressed: selectedValidFrom == null
-                      ? null // Disable button if "Valid From" is not selected
+                      ? null
                       : () => _selectValidToDate(context),
                 ),
               ),
               readOnly: true,
-              enabled: selectedValidFrom != null, // Disable field if "Valid From" is not set
+              enabled: selectedValidFrom != null,
             ),
             const SizedBox(height: 20),
             ElevatedButton(

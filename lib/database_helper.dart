@@ -2,6 +2,10 @@ import 'dart:async';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
+import 'models/meter.dart';
+import 'models/price.dart';
+import 'models/reading.dart';
+
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
   factory DatabaseHelper() => _instance;
@@ -84,9 +88,9 @@ class DatabaseHelper {
   // ********** CRUD Methods **********
 
   // Meters
-  Future<int> insertMeter(Map<String, dynamic> meter) async {
+  Future<int> insertMeter(Meter meter) async {
     Database db = await database;
-    return await db.insert('meters', meter);
+    return await db.insert('meters', meter.toMap());
   }
 
   Future<List<Map<String, dynamic>>> getAllMeters() async {
@@ -147,10 +151,11 @@ class DatabaseHelper {
   }
 
   // Prices
-  Future<int> insertPrice(Map<String, dynamic> price) async {
+  Future<int> insertPrice(Price price) async {
     Database db = await database;
-    return await db.insert('prices', price);
+    return await db.insert('prices', price.toMap());
   }
+
 
   Future<List<Map<String, dynamic>>> getAllPrices() async {
     Database db = await database;
@@ -178,9 +183,9 @@ class DatabaseHelper {
   }
 
   // Readings
-  Future<int> insertReading(Map<String, dynamic> reading) async {
+  Future<int> insertReading(Reading reading) async {
     Database db = await database;
-    return await db.insert('readings', reading);
+    return await db.insert('readings', reading.toMap());
   }
 
   Future<List<Map<String, dynamic>>> getAllReadings() async {

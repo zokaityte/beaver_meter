@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:beaver_meter/database_helper.dart';
+import 'package:beaver_meter/models/reading.dart';
 
 class CreateReadingPage extends StatefulWidget {
   final int meterId;
@@ -60,14 +61,14 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
       return;
     }
 
-    // Create reading record
-    Map<String, dynamic> reading = {
-      'meter_id': widget.meterId,
-      'value': readingValue,
-      'date': readingDate,
-    };
+    // Create a Reading object
+    final reading = Reading(
+      meterId: widget.meterId,
+      value: readingValue,
+      date: readingDate,
+    );
 
-    // Insert into database
+    // Insert into the database
     int result = await DatabaseHelper().insertReading(reading);
 
     if (result != -1) {

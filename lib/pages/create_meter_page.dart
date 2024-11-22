@@ -1,5 +1,6 @@
 import 'package:beaver_meter/constants/config.dart';
 import 'package:beaver_meter/database_helper.dart';
+import 'package:beaver_meter/models/meter.dart';
 import 'package:flutter/material.dart';
 
 class CreateMeterPage extends StatefulWidget {
@@ -27,7 +28,6 @@ class _CreateMeterPageState extends State<CreateMeterPage> {
               decoration: InputDecoration(labelText: 'Meter Name'),
             ),
             SizedBox(height: 20),
-            // Dropdown for selecting units
             DropdownButtonFormField<String>(
               decoration: InputDecoration(labelText: 'Units'),
               value: selectedUnit,
@@ -44,7 +44,6 @@ class _CreateMeterPageState extends State<CreateMeterPage> {
               },
             ),
             SizedBox(height: 20),
-            // Dropdown for selecting color
             DropdownButtonFormField<Color>(
               decoration: InputDecoration(labelText: 'Color'),
               value: selectedColor,
@@ -65,7 +64,6 @@ class _CreateMeterPageState extends State<CreateMeterPage> {
               },
             ),
             SizedBox(height: 20),
-            // Dropdown for selecting icon
             DropdownButtonFormField<IconData>(
               decoration: InputDecoration(labelText: 'Icon'),
               value: selectedIcon,
@@ -88,7 +86,7 @@ class _CreateMeterPageState extends State<CreateMeterPage> {
 
                 if ([meterName, selectedUnit, selectedColor, selectedIcon].contains(null) || meterName.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('All fields must be filled.')),
+                    SnackBar(content: Text('All fields must be filled.')),
                   );
                   return;
                 }
@@ -100,15 +98,16 @@ class _CreateMeterPageState extends State<CreateMeterPage> {
                     SnackBar(content: Text('Meter with that name already exists. Please choose a different name.')),
                   );
                 } else {
-                  final meterData = {
-                    'name': meterName,
-                    'unit': selectedUnit,
-                    'color': selectedColor?.value,
-                    'icon': selectedIcon?.codePoint,
-                  };
+                  // Create Meter object
+                  final meter = Meter(
+                    name: meterName,
+                    unit: selectedUnit!,
+                    color: selectedColor!.value,
+                    icon: selectedIcon!.codePoint,
+                  );
 
-                  await DatabaseHelper().insertMeter(meterData);
-                  print(meterData);
+                  // Insert Meter into the database
+                  await DatabaseHelper().insertMeter(meter);
 
                   Navigator.pop(context);
                 }
