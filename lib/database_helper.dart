@@ -133,15 +133,15 @@ class DatabaseHelper {
     return null; // Return null if no meter is found
   }
 
-  // Fetch a single meter by ID
-  Future<Map<String, dynamic>?> getMeterById(int meterId) async {
+  // Fetch a single Meter by ID
+  Future<Meter?> getMeterById(int meterId) async {
     final db = await database;
     final result = await db.query(
       'meters',
       where: 'id = ?',
       whereArgs: [meterId],
     );
-    return result.isNotEmpty ? result.first : null;
+    return result.isNotEmpty ? Meter.fromMap(result.first) : null;
   }
 
 // Method to fetch all meters as Meter objects
@@ -204,6 +204,25 @@ class DatabaseHelper {
     Database db = await database;
     return await db.delete('readings', where: 'id = ?', whereArgs: [id]);
   }
+
+  Future<String?> getLatestReadingDate(int meterId) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      '''
+    SELECT date FROM readings 
+    WHERE meter_id = ? 
+    ORDER BY date DESC 
+    LIMIT 1
+    ''',
+      [meterId],
+    );
+
+    if (result.isNotEmpty) {
+      return result.first['date'] as String;
+    }
+    return null; // No readings available for this meter
+  }
+
 
   // Settings
   Future<int> insertSetting(String key, String value) async {

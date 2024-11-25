@@ -55,42 +55,50 @@ class _MetersPageState extends State<MetersPage> {
             itemCount: meters.length,
             itemBuilder: (context, index) {
               final meter = meters[index];
-              return GestureDetector(
-                onTap: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => MeterDetailPage(meter: meter),
+              return FutureBuilder<String?>(
+                future: DatabaseHelper().getLatestReadingDate(meter.id!),
+                builder: (context, dateSnapshot) {
+                  final lastReadingDate =
+                      dateSnapshot.data ?? 'N/A'; // Default to 'N/A' if no data
+
+                  return GestureDetector(
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MeterDetailPage(meter: meter),
+                        ),
+                      );
+                      _loadMeters(); // Refresh list after returning
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Color(meter.color),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            IconData(meter.icon, fontFamily: 'MaterialIcons'),
+                            size: 50,
+                            color: Colors.white,
+                          ),
+                          SizedBox(height: 10),
+                          Text(
+                            meter.name,
+                            style: TextStyle(fontSize: 20, color: Colors.white),
+                          ),
+                          SizedBox(height: 10),
+                          Text(
+                            'Last reading: $lastReadingDate',
+                            style: TextStyle(fontSize: 14, color: Colors.white),
+                          ),
+                        ],
+                      ),
                     ),
                   );
-                  _loadMeters(); // Refresh list after returning
                 },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Color(meter.color),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        IconData(meter.icon, fontFamily: 'MaterialIcons'),
-                        size: 50,
-                        color: Colors.white,
-                      ),
-                      SizedBox(height: 10),
-                      Text(
-                        meter.name,
-                        style: TextStyle(fontSize: 20, color: Colors.white),
-                      ),
-                      SizedBox(height: 10),
-                      Text(
-                        'Last reading: N/A', // Replace with actual last reading if available
-                        style: TextStyle(fontSize: 14, color: Colors.white),
-                      ),
-                    ],
-                  ),
-                ),
               );
             },
           );
