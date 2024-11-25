@@ -4,6 +4,7 @@ import 'edit_meter_page.dart';
 import 'prices_page.dart'; // Import the Prices Page
 import 'create_reading_page.dart'; // Import the Create Reading Page
 import 'package:beaver_meter/models/meter.dart';
+import 'package:beaver_meter/constants/config.dart'; // Import the color map
 
 class MeterDetailPage extends StatefulWidget {
   final Meter meter;
@@ -38,7 +39,9 @@ class _MeterDetailPageState extends State<MeterDetailPage> {
   Widget build(BuildContext context) {
     final String meterName = meter.name;
     final IconData meterIcon = IconData(meter.icon, fontFamily: 'MaterialIcons');
-    final Color meterColor = Color(meter.color);
+
+    // Fetch the color from the map using the color ID
+    final Color meterColor = meterColorsMap[meter.color] ?? const Color(0xFF000000);
 
     return Scaffold(
       appBar: AppBar(
@@ -68,7 +71,7 @@ class _MeterDetailPageState extends State<MeterDetailPage> {
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         children: [
-                          Icon(Icons.electric_bolt, color: Colors.blue, size: 40),
+                          Icon(Icons.electric_meter, color: Colors.blue, size: 40),
                           SizedBox(height: 10),
                           Text('500 units', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                           Text('Average Consumption'),

@@ -16,7 +16,7 @@ class _EditMeterPageState extends State<EditMeterPage> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late String selectedUnit;
-  late Color selectedColor;
+  late int selectedColorId; // Store color ID directly
   late IconData selectedIcon;
 
   @override
@@ -25,8 +25,9 @@ class _EditMeterPageState extends State<EditMeterPage> {
     _nameController = TextEditingController(text: widget.meter.name);
     selectedUnit = widget.meter.unit;
 
-    // Convert ARGB int to Color for the dropdown
-    selectedColor = Color(widget.meter.color);
+    // Use color ID from the database directly
+    selectedColorId = widget.meter.color;
+
     selectedIcon = IconData(widget.meter.icon, fontFamily: 'MaterialIcons');
   }
 
@@ -37,7 +38,7 @@ class _EditMeterPageState extends State<EditMeterPage> {
         id: widget.meter.id,
         name: _nameController.text,
         unit: selectedUnit,
-        color: selectedColor.value, // Convert Color to ARGB int
+        color: selectedColorId, // Save color ID directly
         icon: selectedIcon.codePoint,
       );
 
@@ -119,22 +120,27 @@ class _EditMeterPageState extends State<EditMeterPage> {
                 },
               ),
               SizedBox(height: 20),
-              DropdownButtonFormField<Color>(
+              DropdownButtonFormField<int>(
                 decoration: InputDecoration(labelText: 'Color'),
-                value: selectedColor,
-                items: meterColors.map((Color color) {
-                  return DropdownMenuItem<Color>(
-                    value: color,
-                    child: Container(
-                      width: 24,
-                      height: 24,
-                      color: color,
+                value: selectedColorId,
+                items: meterColorsMap.entries.map((entry) {
+                  return DropdownMenuItem<int>(
+                    value: entry.key,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 24,
+                          height: 24,
+                          color: entry.value,
+                        ),
+                        SizedBox(width: 8)
+                      ],
                     ),
                   );
                 }).toList(),
-                onChanged: (Color? newColor) {
+                onChanged: (int? newColorId) {
                   setState(() {
-                    selectedColor = newColor!;
+                    selectedColorId = newColorId!;
                   });
                 },
               ),

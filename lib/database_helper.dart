@@ -219,7 +219,6 @@ class DatabaseHelper {
     INNER JOIN meters ON readings.meter_id = meters.id
     ORDER BY readings.date DESC
   ''');
-    print('Raw Query Result: $result');
 
     // Parse the result into a list of Reading and Meter objects
     return result.map((row) {

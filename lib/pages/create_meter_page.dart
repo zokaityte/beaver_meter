@@ -12,7 +12,7 @@ class _CreateMeterPageState extends State<CreateMeterPage> {
   final TextEditingController nameController = TextEditingController();
 
   String? selectedUnit;
-  Color? selectedColor;
+  int? selectedColorId; // Updated to store the color ID
   IconData? selectedIcon;
 
   @override
@@ -44,22 +44,27 @@ class _CreateMeterPageState extends State<CreateMeterPage> {
               },
             ),
             SizedBox(height: 20),
-            DropdownButtonFormField<Color>(
+            DropdownButtonFormField<int>(
               decoration: InputDecoration(labelText: 'Color'),
-              value: selectedColor,
-              items: meterColors.map((Color color) {
-                return DropdownMenuItem<Color>(
-                  value: color,
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    color: color,
+              value: selectedColorId,
+              items: meterColorsMap.entries.map((entry) {
+                return DropdownMenuItem<int>(
+                  value: entry.key,
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        color: entry.value,
+                      ),
+                      SizedBox(width: 8),
+                    ],
                   ),
                 );
               }).toList(),
-              onChanged: (Color? newColor) {
+              onChanged: (int? newColorId) {
                 setState(() {
-                  selectedColor = newColor;
+                  selectedColorId = newColorId;
                 });
               },
             ),
@@ -84,7 +89,7 @@ class _CreateMeterPageState extends State<CreateMeterPage> {
               onPressed: () async {
                 String meterName = nameController.text;
 
-                if ([meterName, selectedUnit, selectedColor, selectedIcon].contains(null) || meterName.isEmpty) {
+                if ([meterName, selectedUnit, selectedColorId, selectedIcon].contains(null) || meterName.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('All fields must be filled.')),
                   );
@@ -102,7 +107,7 @@ class _CreateMeterPageState extends State<CreateMeterPage> {
                   final meter = Meter(
                     name: meterName,
                     unit: selectedUnit!,
-                    color: selectedColor!.value,
+                    color: meterColorsMap[selectedColorId]!.value, // Store color ARGB value
                     icon: selectedIcon!.codePoint,
                   );
 

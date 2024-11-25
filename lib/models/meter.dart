@@ -2,7 +2,7 @@ class Meter {
   final int? id;
   final String name;
   final String unit;
-  final int color; // ARGB
+  final int color; // id of color from config.dart
   final int icon;
 
   Meter({

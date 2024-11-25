@@ -3,6 +3,7 @@ import '../models/meter.dart';
 import 'create_meter_page.dart';
 import 'meter_detail_page.dart';
 import 'package:beaver_meter/database_helper.dart';
+import 'package:beaver_meter/constants/config.dart'; // Import the color map
 
 class MetersPage extends StatefulWidget {
   @override
@@ -61,6 +62,9 @@ class _MetersPageState extends State<MetersPage> {
                   final lastReadingDate =
                       dateSnapshot.data ?? 'N/A'; // Default to 'N/A' if no data
 
+                  // Get the color using the meter.color as an ID
+                  final meterColor = meterColorsMap[meter.color];
+
                   return GestureDetector(
                     onTap: () async {
                       await Navigator.push(
@@ -73,7 +77,7 @@ class _MetersPageState extends State<MetersPage> {
                     },
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Color(meter.color),
+                        color: meterColor,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Column(

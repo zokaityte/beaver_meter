@@ -22,10 +22,24 @@ const Map<String, String> unitDescriptions = {
 };
 
 // List of icons
-final List<IconData> meterIcons = [Icons.electric_bolt, Icons.water, Icons.fireplace, Icons.bolt];
+final List<IconData> meterIcons = [
+  Icons.electric_bolt,      // Electricity
+  Icons.water,              // Water
+  Icons.fireplace,          // Gas
+  Icons.lightbulb,          // Light/Electricity
+  Icons.energy_savings_leaf,// Eco-friendly/Energy Savings
+  Icons.shower,             // Water/Usage in Showers
+  Icons.battery_charging_full, // Battery Meter/Power
+  Icons.solar_power,        // Solar Energy
+  Icons.water_drop,         // Water Drop Icon
+  Icons.device_thermostat,  // Temperature Control
+];
+
 // List of colors
-const List<Color> meterColors = [
-  Color(4283215696),
-  Color(4280391411),
-  Color(-7118842),
-  Color(-13728548)];
+const Map<int, Color> meterColorsMap = {
+  1: Color(0xFF20638C), // Background-1
+  2: Color(0xFFF2B705), // Background-2
+  3: Color(0xFFA68A37), // Background-3
+  4: Color(0xFFD96704), // Background-4
+  5: Color(0xFF8C4A32), // Background-5
+};
