@@ -242,14 +242,23 @@ class DatabaseHelper {
   }
 
 
-  Future<int> updateReading(int id, Map<String, dynamic> reading) async {
-    Database db = await database;
-    return await db.update('readings', reading, where: 'id = ?', whereArgs: [id]);
+  Future<int> updateReading(Reading reading) async {
+    final db = await database;
+    return await db.update(
+      'readings',
+      reading.toMap(),
+      where: 'id = ?',
+      whereArgs: [reading.id],
+    );
   }
 
   Future<int> deleteReading(int id) async {
-    Database db = await database;
-    return await db.delete('readings', where: 'id = ?', whereArgs: [id]);
+    final db = await database;
+    return await db.delete(
+      'readings',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<String?> getLatestReadingDate(int meterId) async {

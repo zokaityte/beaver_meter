@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:beaver_meter/database_helper.dart';
 import 'package:beaver_meter/models/reading.dart';
 import 'package:beaver_meter/models/meter.dart';
+import 'package:beaver_meter/pages/edit_reading_page.dart'; // Import the EditReadingPage
 
 class HistoryPage extends StatefulWidget {
   @override
@@ -88,10 +89,24 @@ class _HistoryPageState extends State<HistoryPage> {
                   Text('Date: ${reading.date}'),
                   if (previousReading != null)
                     Text(
-                      calculateConsumption(reading.value.toString(), previousReading.value.toString(), meter.unit),
+                      calculateConsumption(
+                        reading.value.toString(),
+                        previousReading.value.toString(),
+                        meter.unit,
+                      ),
                     ),
                 ],
               ),
+              onTap: () async {
+                // Navigate to the EditReadingPage and refresh data upon returning
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EditReadingPage(reading: reading),
+                  ),
+                );
+                _fetchReadingsWithMeterData(); // Refresh data
+              },
             ),
           );
         },
