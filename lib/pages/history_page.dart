@@ -1,23 +1,50 @@
 import 'package:flutter/material.dart';
+import 'package:beaver_meter/database_helper.dart';
+import 'package:beaver_meter/models/reading.dart';
+import 'package:beaver_meter/models/meter.dart';
 
-class HistoryPage extends StatelessWidget {
-  // Dummy data for readings with meter names and values as Strings
-  final List<Map<String, dynamic>> readings = [
-    {'meterName': 'Electricity', 'date': 'Oct 1, 2024', 'value': '1000', 'unit': 'kWh'},
-    {'meterName': 'Electricity', 'date': 'Sep 29, 2024', 'value': '950', 'unit': 'kWh'},
-    {'meterName': 'Water', 'date': 'Sep 25, 2024', 'value': '900', 'unit': 'm³'},
-    {'meterName': 'Water', 'date': 'Sep 20, 2024', 'value': '850', 'unit': 'm³'},
-  ];
+class HistoryPage extends StatefulWidget {
+  @override
+  _HistoryPageState createState() => _HistoryPageState();
+}
 
-  // Function to calculate the consumption difference
+class _HistoryPageState extends State<HistoryPage> {
+  List<Map<String, dynamic>> readingsWithMeterData = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchReadingsWithMeterData();
+  }
+
+  Future<void> _fetchReadingsWithMeterData() async {
+    try {
+      // Fetch readings joined with meter data
+      final fetchedReadings = await DatabaseHelper().getReadingsWithMeterData();
+      if (mounted) {
+        setState(() {
+          readingsWithMeterData = fetchedReadings;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+      print('Error fetching readings: $e');
+    }
+  }
+
   String calculateConsumption(String currentValueStr, String? previousValueStr, String unit) {
-    // Ensure both values are not null
-    if (currentValueStr == null || previousValueStr == null) {
+    if (currentValueStr.isEmpty || previousValueStr == null || previousValueStr.isEmpty) {
       return 'No previous data';
     }
 
-    int currentValue = int.tryParse(currentValueStr) ?? 0; // Convert current value to int
-    int previousValue = int.tryParse(previousValueStr) ?? 0; // Convert previous value to int
+    int currentValue = int.tryParse(currentValueStr) ?? 0;
+    int previousValue = int.tryParse(previousValueStr) ?? 0;
 
     int consumption = currentValue - previousValue;
     return '$consumption $unit consumed';
@@ -25,26 +52,43 @@ class HistoryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: Text('History')),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (readingsWithMeterData.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: Text('History')),
+        body: Center(child: Text('No readings available.')),
+      );
+    }
+
     return Scaffold(
+      appBar: AppBar(title: Text('History')),
       body: ListView.builder(
-        itemCount: readings.length,
+        itemCount: readingsWithMeterData.length,
         itemBuilder: (context, index) {
-          final reading = readings[index];
-          final previousReading = index < readings.length - 1
-              ? readings[index + 1] // Get the previous reading (if exists)
+          final readingData = readingsWithMeterData[index];
+          final Reading reading = readingData['reading'];
+          final Meter meter = readingData['meter'];
+          final previousReading = index < readingsWithMeterData.length - 1
+              ? readingsWithMeterData[index + 1]['reading']
               : null;
 
           return Card(
             margin: EdgeInsets.all(10),
             child: ListTile(
-              title: Text('${reading['meterName']} - ${reading['value']} ${reading['unit']}'),
+              title: Text('${meter.name} - ${reading.value} ${meter.unit}'),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Date: ${reading['date']}'),
-                  if (previousReading != null && previousReading['value'] != null)
+                  Text('Date: ${reading.date}'),
+                  if (previousReading != null)
                     Text(
-                      calculateConsumption(reading['value'], previousReading['value'], reading['unit']),
+                      calculateConsumption(reading.value.toString(), previousReading.value.toString(), meter.unit),
                     ),
                 ],
               ),

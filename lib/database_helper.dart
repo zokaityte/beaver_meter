@@ -29,28 +29,28 @@ class DatabaseHelper {
   }
 
   Future<void> _onCreate(Database db, int version) async {
-    await db.execute('''
+      await db.execute('''
       CREATE TABLE meters(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE,
-        unit TEXT,
-        color INTEGER,
-        icon INTEGER,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        name TEXT UNIQUE NOT NULL,
+        unit TEXT NOT NULL,
+        color INTEGER NOT NULL,
+        icon INTEGER NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
       )
     ''');
 
     await db.execute('''
       CREATE TABLE prices(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        price_per_unit REAL,
-        base_price REAL,
-        valid_from TEXT,
-        valid_to TEXT,
-        meter_id INTEGER,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        price_per_unit REAL NOT NULL,
+        base_price REAL NOT NULL,
+        valid_from TEXT NOT NULL,
+        valid_to TEXT NOT NULL,
+        meter_id INTEGER NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
         FOREIGN KEY(meter_id) REFERENCES meters(id) ON DELETE CASCADE ON UPDATE CASCADE
       )
     ''');
@@ -58,30 +58,28 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE readings(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        meter_id INTEGER,
-        value REAL,
-        date TEXT,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        meter_id INTEGER NOT NULL,
+        value INTEGER NOT NULL,
+        date TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
         FOREIGN KEY(meter_id) REFERENCES meters(id) ON DELETE CASCADE ON UPDATE CASCADE
       )
     ''');
 
-    await db.execute('''
+      await db.execute('''
       CREATE TABLE settings(
-        key TEXT PRIMARY KEY,
-        value TEXT,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        key TEXT PRIMARY KEY NOT NULL,
+        value TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
       )
     ''');
 
-    // Default currency setting
+  // Default currency setting
     await db.insert('settings', {
       'key': 'currency',
       'value': 'USD',
-      'created_at': DateTime.now().toIso8601String(),
-      'updated_at': DateTime.now().toIso8601String(),
     });
   }
 
@@ -199,10 +197,50 @@ class DatabaseHelper {
     return await db.insert('readings', reading.toMap());
   }
 
-  Future<List<Map<String, dynamic>>> getAllReadings() async {
+  Future<List<Reading>> getAllReadings() async {
     Database db = await database;
-    return await db.query('readings');
+    final result = await db.query('readings');
+    return result.map((e) => Reading.fromMap(e)).toList();
   }
+
+  Future<List<Map<String, dynamic>>> getReadingsWithMeterData() async {
+    final db = await database;
+    final result = await db.rawQuery('''
+    SELECT 
+      readings.id AS reading_id,
+      readings.value AS reading_value,
+      readings.date AS reading_date,
+      meters.id AS meter_id,
+      meters.name AS meter_name,
+      meters.unit AS meter_unit,
+      meters.color AS meter_color,  -- Include color
+      meters.icon AS meter_icon    -- Include icon
+    FROM readings
+    INNER JOIN meters ON readings.meter_id = meters.id
+    ORDER BY readings.date DESC
+  ''');
+    print('Raw Query Result: $result');
+
+    // Parse the result into a list of Reading and Meter objects
+    return result.map((row) {
+      return {
+        'reading': Reading(
+          id: row['reading_id'] as int,
+          meterId: row['meter_id'] as int,
+          value: row['reading_value'] as int,
+          date: row['reading_date'] as String,
+        ),
+        'meter': Meter(
+          id: row['meter_id'] as int,
+          name: row['meter_name'] as String,
+          unit: row['meter_unit'] as String,
+          color: row['meter_color'] as int, // Updated key
+          icon: row['meter_icon'] as int,   // Updated key
+        ),
+      };
+    }).toList();
+  }
+
 
   Future<int> updateReading(int id, Map<String, dynamic> reading) async {
     Database db = await database;

@@ -51,12 +51,12 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
 
   // Method to save the reading
   Future<void> _saveReading(BuildContext context) async {
-    double? readingValue = double.tryParse(readingValueController.text);
+    int? readingValue = int.tryParse(readingValueController.text); // Parse as integer
     String readingDate = readingDateController.text;
 
     if (readingValue == null || readingDate.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please enter a valid reading value and date.')),
+        SnackBar(content: Text('Please enter a valid integer reading value and date.')),
       );
       return;
     }
@@ -64,7 +64,7 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
     // Create a Reading object
     final reading = Reading(
       meterId: widget.meterId,
-      value: readingValue,
+      value: readingValue, // Store as integer
       date: readingDate,
     );
 
@@ -74,7 +74,7 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
     if (result != -1) {
       // Success
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Reading added successfully!')),
+        SnackBar(content: Text('Reading added successfully!'), duration: Duration(seconds: 2)),
       );
       Navigator.pop(context);
     } else {

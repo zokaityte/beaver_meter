@@ -1,7 +1,7 @@
 class Reading {
   final int? id;
   final int meterId;
-  final double value;
+  final int value;
   final String date;
 
   Reading({
@@ -13,10 +13,10 @@ class Reading {
 
   factory Reading.fromMap(Map<String, dynamic> map) {
     return Reading(
-      id: map['id'],
-      meterId: map['meter_id'],
-      value: map['value'],
-      date: map['date'],
+      id: map['id'] as int,
+      meterId: map['meter_id'] as int,
+      value: map['value'] as int,
+      date: map['date'] as String,
     );
   }
 
@@ -29,4 +29,3 @@ class Reading {
     };
   }
 }
-
