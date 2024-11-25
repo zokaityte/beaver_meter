@@ -70,12 +70,9 @@ class _EditMeterPageState extends State<EditMeterPage> {
 
     if (confirmDelete == true) {
       await db.deleteMeter(widget.meter.id!); // Delete the meter and its associated data
-
-      // Navigate back to the MetersPage by popping all other routes
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      Navigator.popUntil(context, (route) => route.isFirst); // Back to MetersPage
     }
   }
-
 
   @override
   Widget build(BuildContext context) {

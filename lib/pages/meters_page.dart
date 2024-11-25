@@ -15,10 +15,9 @@ class _MetersPageState extends State<MetersPage> {
   @override
   void initState() {
     super.initState();
-    _loadMeters(); // Initial load
+    _loadMeters();
   }
 
-  // Load meters from the database
   void _loadMeters() {
     setState(() {
       metersFuture = DatabaseHelper().getMeters();
@@ -42,7 +41,8 @@ class _MetersPageState extends State<MetersPage> {
           final meters = snapshot.data ?? [];
 
           if (meters.isEmpty) {
-            return Center(child: Text('No meters found. Add one using the button below.'));
+            return Center(
+                child: Text('No meters found. Add one using the button below.'));
           }
 
           return GridView.builder(
@@ -56,17 +56,18 @@ class _MetersPageState extends State<MetersPage> {
             itemBuilder: (context, index) {
               final meter = meters[index];
               return GestureDetector(
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => MeterDetailPage(meter: meter), // Pass Meter object
+                      builder: (context) => MeterDetailPage(meter: meter),
                     ),
                   );
+                  _loadMeters(); // Refresh list after returning
                 },
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Color(meter.color), // Convert ARGB int to Color
+                    color: Color(meter.color),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Column(
@@ -96,14 +97,12 @@ class _MetersPageState extends State<MetersPage> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color.fromARGB(255, 157, 184, 177),
         onPressed: () async {
-          // Navigate to CreateMeterPage and refresh when returning
           await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => CreateMeterPage()),
           );
-          _loadMeters(); // Reload meters when returning
+          _loadMeters(); // Refresh list after adding
         },
         child: Icon(Icons.add),
       ),

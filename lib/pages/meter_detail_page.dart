@@ -1,19 +1,44 @@
 import 'package:flutter/material.dart';
+import '../database_helper.dart';
 import 'edit_meter_page.dart';
 import 'prices_page.dart'; // Import the Prices Page
 import 'create_reading_page.dart'; // Import the Create Reading Page
 import 'package:beaver_meter/models/meter.dart';
 
-class MeterDetailPage extends StatelessWidget {
+class MeterDetailPage extends StatefulWidget {
   final Meter meter;
 
   MeterDetailPage({required this.meter});
 
   @override
+  _MeterDetailPageState createState() => _MeterDetailPageState();
+}
+
+class _MeterDetailPageState extends State<MeterDetailPage> {
+  late Meter meter;
+
+  @override
+  void initState() {
+    super.initState();
+    meter = widget.meter;
+  }
+
+  Future<void> _reloadDetails() async {
+    final updatedMeter = await DatabaseHelper().getMeterById(meter.id!);
+    if (updatedMeter != null) {
+      setState(() {
+        meter = updatedMeter;
+      });
+    } else {
+      Navigator.pop(context, true);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final String meterName = meter.name;
     final IconData meterIcon = IconData(meter.icon, fontFamily: 'MaterialIcons');
-    final Color meterColor = Color(meter.color); // Convert ARGB int to Color
+    final Color meterColor = Color(meter.color);
 
     return Scaffold(
       appBar: AppBar(
@@ -34,7 +59,6 @@ class MeterDetailPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Display averages in a row (information panels)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -111,13 +135,16 @@ class MeterDetailPage extends StatelessWidget {
               child: ListTile(
                 leading: Icon(Icons.edit, color: Colors.red),
                 title: Text('Edit Meter'),
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  bool? updated = await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => EditMeterPage(meter: meter), // Pass the Meter object
                     ),
                   );
+                  if (updated == true) {
+                    await _reloadDetails();
+                  }
                 },
               ),
             ),
