@@ -307,5 +307,34 @@ class DatabaseHelper {
     return await db.delete('settings', where: 'key = ?', whereArgs: [key]);
   }
 
+  Future<bool> doesReadingExist(int meterId, String date) async {
+    final db = await database;
+    final result = await db.rawQuery('''
+    SELECT 1 
+    FROM readings
+    WHERE meter_id = ? AND date = ?
+    LIMIT 1
+  ''', [meterId, date]);
 
+    return result.isNotEmpty;
+  }
+
+  Future<int?> getReadingBeforeValue(int meterId, String date) async {
+    final db = await database;
+
+    // Query to get the most recent reading value before the given date
+    final result = await db.rawQuery('''
+    SELECT value 
+    FROM readings
+    WHERE meter_id = ? AND date < ?
+    ORDER BY date DESC
+    LIMIT 1
+  ''', [meterId, date]);
+
+    if (result.isNotEmpty) {
+      return result.first['value'] as int;
+    }
+
+    return null; // No previous reading found
+  }
 }
