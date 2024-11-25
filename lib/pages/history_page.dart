@@ -11,12 +11,29 @@ class HistoryPage extends StatefulWidget {
 
 class _HistoryPageState extends State<HistoryPage> {
   List<Map<String, dynamic>> readingsWithMeterData = [];
+  List<Meter> meters = []; // List of meters for the dropdown
+  Meter? selectedMeter; // Currently selected meter (null for "All Meters")
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    _fetchMeters();
     _fetchReadingsWithMeterData();
+  }
+
+  Future<void> _fetchMeters() async {
+    try {
+      // Fetch all meters
+      final fetchedMeters = await DatabaseHelper().getMeters();
+      if (mounted) {
+        setState(() {
+          meters = fetchedMeters;
+        });
+      }
+    } catch (e) {
+      print('Error fetching meters: $e');
+    }
   }
 
   Future<void> _fetchReadingsWithMeterData() async {
@@ -51,65 +68,125 @@ class _HistoryPageState extends State<HistoryPage> {
     return '$consumption $unit consumed';
   }
 
+  List<Map<String, dynamic>> _filterReadingsByMeter() {
+    if (selectedMeter == null) {
+      return readingsWithMeterData; // Show all readings if no meter is selected
+    }
+    return readingsWithMeterData
+        .where((readingData) => readingData['meter'].id == selectedMeter!.id)
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return Scaffold(
-        appBar: AppBar(title: Text('History')),
+      return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    if (readingsWithMeterData.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(title: Text('History')),
-        body: Center(child: Text('No readings available.')),
-      );
-    }
+    final filteredReadings = _filterReadingsByMeter();
 
     return Scaffold(
-      appBar: AppBar(title: Text('History')),
-      body: ListView.builder(
-        itemCount: readingsWithMeterData.length,
-        itemBuilder: (context, index) {
-          final readingData = readingsWithMeterData[index];
-          final Reading reading = readingData['reading'];
-          final Meter meter = readingData['meter'];
-          final previousReading = index < readingsWithMeterData.length - 1
-              ? readingsWithMeterData[index + 1]['reading']
-              : null;
-
-          return Card(
-            margin: EdgeInsets.all(10),
-            child: ListTile(
-              title: Text('${meter.name} - ${reading.value} ${meter.unit}'),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Date: ${reading.date}'),
-                  if (previousReading != null)
-                    Text(
-                      calculateConsumption(
-                        reading.value.toString(),
-                        previousReading.value.toString(),
-                        meter.unit,
-                      ),
-                    ),
-                ],
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: DropdownButtonFormField<Meter>(
+              isExpanded: true,
+              decoration: InputDecoration(
+                labelText: 'Filter by Meter',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
               ),
-              onTap: () async {
-                // Navigate to the EditReadingPage and refresh data upon returning
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => EditReadingPage(reading: reading),
+              value: selectedMeter,
+              items: [
+                DropdownMenuItem<Meter>(
+                  value: null, // For "All Meters"
+                  child: Row(
+                    children: [
+                      Icon(Icons.all_inclusive),
+                      SizedBox(width: 8),
+                      Text('All Meters'),
+                    ],
                   ),
-                );
-                _fetchReadingsWithMeterData(); // Refresh data
+                ),
+                ...meters.map((meter) {
+                  return DropdownMenuItem<Meter>(
+                    value: meter,
+                    child: Row(
+                      children: [
+                        Icon(IconData(meter.icon, fontFamily: 'MaterialIcons')),
+                        SizedBox(width: 8),
+                        Text(meter.name),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ],
+              onChanged: (Meter? newMeter) {
+                setState(() {
+                  selectedMeter = newMeter;
+                });
               },
             ),
-          );
-        },
+          ),
+          Expanded(
+            child: filteredReadings.isEmpty
+                ? Center(child: Text('No readings available for the selected meter.'))
+                : ListView.builder(
+              itemCount: filteredReadings.length,
+              itemBuilder: (context, index) {
+                final readingData = filteredReadings[index];
+                final Reading reading = readingData['reading'];
+                final Meter meter = readingData['meter'];
+                final previousReading = index < filteredReadings.length - 1
+                    ? filteredReadings[index + 1]['reading']
+                    : null;
+
+                return Card(
+                  margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                  child: ListTile(
+                    contentPadding: EdgeInsets.all(8.0),
+                    title: Text(
+                      '${meter.name}',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Value: ${reading.value} ${meter.unit}'),
+                        Text('Date: ${reading.date}'),
+                        if (previousReading != null)
+                          Text(
+                            calculateConsumption(
+                              reading.value.toString(),
+                              previousReading.value.toString(),
+                              meter.unit,
+                            ),
+                            style: TextStyle(color: Colors.green),
+                          ),
+                      ],
+                    ),
+                    onTap: () async {
+                      // Navigate to the EditReadingPage and refresh data upon returning
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditReadingPage(reading: reading),
+                        ),
+                      );
+                      if (result == 'refresh') {
+                        _fetchReadingsWithMeterData(); // Refresh data
+                      }
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
