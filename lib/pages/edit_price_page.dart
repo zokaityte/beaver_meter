@@ -5,8 +5,9 @@ import '../database_helper.dart';
 
 class EditPricePage extends StatefulWidget {
   final Price price;
+  final String unit;
 
-  EditPricePage({required this.price, Key? key}) : super(key: key);
+  EditPricePage({required this.price, required this.unit, Key? key}) : super(key: key);
 
   @override
   _EditPricePageState createState() => _EditPricePageState();
@@ -171,7 +172,7 @@ class _EditPricePageState extends State<EditPricePage> {
           children: [
             TextField(
               controller: pricePerUnitController,
-              decoration: const InputDecoration(labelText: 'Price per Unit'),
+              decoration: InputDecoration(labelText: 'Price per ${widget.unit}'),
               keyboardType: TextInputType.number,
             ),
             TextField(

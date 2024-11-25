@@ -108,7 +108,7 @@ class _MeterDetailPageState extends State<MeterDetailPage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => PricesPage(meterId: meter.id!), // Pass meter ID
+                      builder: (context) => PricesPage(meter: meter), // Pass meter ID
                     ),
                   );
                 },

@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import 'create_price_page.dart'; // To create a new price
 import 'edit_price_page.dart';   // To edit an existing price
 import '../models/price.dart';   // Import Price model
+import '../models/meter.dart';   // Import Meter model
 import 'package:beaver_meter/database_helper.dart';
 
 class PricesPage extends StatefulWidget {
-  final int meterId;
+  final Meter meter;
 
-  PricesPage({required this.meterId});
+  PricesPage({required this.meter});
 
   @override
   _PricesPageState createState() => _PricesPageState();
 }
 
 class _PricesPageState extends State<PricesPage> {
-  String? meterName;
   List<Price> prices = [];
   bool isLoading = true;
 
@@ -24,17 +24,15 @@ class _PricesPageState extends State<PricesPage> {
     _loadData();
   }
 
-  // Load meter name and prices
+  // Load prices for the given meter
   Future<void> _loadData() async {
     setState(() {
       isLoading = true;
     });
 
-    final fetchedMeterName = await DatabaseHelper().getMeterNameById(widget.meterId);
-    final fetchedPrices = await DatabaseHelper().getPricesByMeterIdAsObjects(widget.meterId);
+    final fetchedPrices = await DatabaseHelper().getPricesByMeterIdAsObjects(widget.meter.id!);
 
     setState(() {
-      meterName = fetchedMeterName ?? 'Unknown Meter';
       prices = fetchedPrices;
       isLoading = false;
     });
@@ -44,14 +42,14 @@ class _PricesPageState extends State<PricesPage> {
   Widget build(BuildContext context) {
     if (isLoading) {
       return Scaffold(
-        appBar: AppBar(title: Text('Loading...')),
+        appBar: AppBar(title: Text('Prices for ${widget.meter.name}')),
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Prices for $meterName'),
+        title: Text('Prices for ${widget.meter.name}'),
       ),
       body: Column(
         children: [
@@ -63,7 +61,7 @@ class _PricesPageState extends State<PricesPage> {
                 return Card(
                   margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                   child: ListTile(
-                    title: Text('Price: \$${price.pricePerUnit} per unit'),
+                    title: Text('Price: \$${price.pricePerUnit} per ${widget.meter.unit}'),
                     subtitle: Text(
                       'Base Price: \$${price.basePrice}\nValid from: ${price.validFrom} to ${price.validTo}',
                     ),
@@ -72,10 +70,12 @@ class _PricesPageState extends State<PricesPage> {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => EditPricePage(price: price),
+                          builder: (context) => EditPricePage(price: price, unit: widget.meter.unit),
                         ),
                       );
-                      _loadData(); // Refresh prices after returning
+                      if (result != null) {
+                        _loadData(); // Refresh prices after returning
+                      }
                     },
                   ),
                 );
@@ -97,7 +97,7 @@ class _PricesPageState extends State<PricesPage> {
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => CreatePricePage(meterId: widget.meterId),
+                      builder: (context) => CreatePricePage(meterId: widget.meter.id!, unit: widget.meter.unit),
                     ),
                   );
                   _loadData(); // Refresh prices

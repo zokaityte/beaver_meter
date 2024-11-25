@@ -5,8 +5,9 @@ import 'package:beaver_meter/models/price.dart';
 
 class CreatePricePage extends StatefulWidget {
   final int meterId;
+  final String unit;
 
-  CreatePricePage({Key? key, required this.meterId}) : super(key: key);
+  CreatePricePage({Key? key, required this.meterId, required this.unit}) : super(key: key);
 
   @override
   _CreatePricePageState createState() => _CreatePricePageState();
@@ -110,7 +111,7 @@ class _CreatePricePageState extends State<CreatePricePage> {
           children: [
             TextField(
               controller: pricePerUnitController,
-              decoration: const InputDecoration(labelText: 'Price per Unit'),
+              decoration: InputDecoration(labelText: 'Price per ${widget.unit}'),
               keyboardType: TextInputType.number,
             ),
             TextField(
