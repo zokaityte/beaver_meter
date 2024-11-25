@@ -164,10 +164,16 @@ class DatabaseHelper {
     return await db.query('prices');
   }
 
-  Future<int> updatePrice(int id, Map<String, dynamic> price) async {
-    Database db = await database;
-    return await db.update('prices', price, where: 'id = ?', whereArgs: [id]);
+  Future<int> updatePrice(Price price) async {
+    final db = await database;
+    return await db.update(
+      'prices',
+      price.toMap(), // Convert Price object to Map
+      where: 'id = ?',
+      whereArgs: [price.id],
+    );
   }
+
 
   Future<int> deletePrice(int id) async {
     Database db = await database;
@@ -175,13 +181,16 @@ class DatabaseHelper {
   }
 
   // Method to fetch prices for a specific meter ID
-  Future<List<Map<String, dynamic>>> getPricesByMeterId(int meterId) async {
-    Database db = await database;
-    return await db.query(
+  Future<List<Price>> getPricesByMeterIdAsObjects(int meterId) async {
+    final db = await database;
+    final result = await db.query(
       'prices',
       where: 'meter_id = ?',
       whereArgs: [meterId],
     );
+
+    // Convert query result to a list of Price objects
+    return result.map((e) => Price.fromMap(e)).toList();
   }
 
   // Readings

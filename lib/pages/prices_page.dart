@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'create_price_page.dart'; // To create a new price
 import 'edit_price_page.dart';   // To edit an existing price
+import '../models/price.dart';   // Import Price model
 import 'package:beaver_meter/database_helper.dart';
 
 class PricesPage extends StatefulWidget {
@@ -14,7 +15,7 @@ class PricesPage extends StatefulWidget {
 
 class _PricesPageState extends State<PricesPage> {
   String? meterName;
-  List<Map<String, dynamic>> prices = [];
+  List<Price> prices = [];
   bool isLoading = true;
 
   @override
@@ -30,7 +31,7 @@ class _PricesPageState extends State<PricesPage> {
     });
 
     final fetchedMeterName = await DatabaseHelper().getMeterNameById(widget.meterId);
-    final fetchedPrices = await DatabaseHelper().getPricesByMeterId(widget.meterId);
+    final fetchedPrices = await DatabaseHelper().getPricesByMeterIdAsObjects(widget.meterId);
 
     setState(() {
       meterName = fetchedMeterName ?? 'Unknown Meter';
@@ -62,18 +63,19 @@ class _PricesPageState extends State<PricesPage> {
                 return Card(
                   margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                   child: ListTile(
-                    title: Text('Price: \$${price['price_per_unit']} per unit'),
+                    title: Text('Price: \$${price.pricePerUnit} per unit'),
                     subtitle: Text(
-                      'Base Price: \$${price['base_price']}\nValid from: ${price['valid_from']} to ${price['valid_to']}',
+                      'Base Price: \$${price.basePrice}\nValid from: ${price.validFrom} to ${price.validTo}',
                     ),
-                    onTap: () {
-                      // Navigate to the Edit Price Page
-                      Navigator.push(
+                    onTap: () async {
+                      // Navigate to the Edit Price Page and refresh upon returning
+                      final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => EditPricePage(price: price),
                         ),
                       );
+                      _loadData(); // Refresh prices after returning
                     },
                   ),
                 );
