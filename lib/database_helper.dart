@@ -1,6 +1,7 @@
 import 'dart:async';
-import 'package:sqflite/sqflite.dart';
+
 import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
 
 import 'models/meter.dart';
 import 'models/price.dart';
@@ -8,6 +9,7 @@ import 'models/reading.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
+
   factory DatabaseHelper() => _instance;
   static Database? _database;
 
@@ -29,7 +31,7 @@ class DatabaseHelper {
   }
 
   Future<void> _onCreate(Database db, int version) async {
-      await db.execute('''
+    await db.execute('''
       CREATE TABLE meters(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT UNIQUE NOT NULL,
@@ -67,7 +69,7 @@ class DatabaseHelper {
       )
     ''');
 
-      await db.execute('''
+    await db.execute('''
       CREATE TABLE settings(
         key TEXT PRIMARY KEY NOT NULL,
         value TEXT NOT NULL,
@@ -76,7 +78,7 @@ class DatabaseHelper {
       )
     ''');
 
-  // Default currency setting
+    // Default currency setting
     await db.insert('settings', {
       'key': 'currency',
       'value': 'USD',
@@ -149,13 +151,11 @@ class DatabaseHelper {
     return maps.map((map) => Meter.fromMap(map)).toList();
   }
 
-
   // Prices
   Future<int> insertPrice(Price price) async {
     Database db = await database;
     return await db.insert('prices', price.toMap());
   }
-
 
   Future<List<Map<String, dynamic>>> getAllPrices() async {
     Database db = await database;
@@ -171,7 +171,6 @@ class DatabaseHelper {
       whereArgs: [price.id],
     );
   }
-
 
   Future<int> deletePrice(int id) async {
     Database db = await database;
@@ -233,13 +232,13 @@ class DatabaseHelper {
           id: row['meter_id'] as int,
           name: row['meter_name'] as String,
           unit: row['meter_unit'] as String,
-          color: row['meter_color'] as int, // Updated key
-          icon: row['meter_icon'] as int,   // Updated key
+          color: row['meter_color'] as int,
+          // Updated key
+          icon: row['meter_icon'] as int, // Updated key
         ),
       };
     }).toList();
   }
-
 
   Future<int> updateReading(Reading reading) async {
     final db = await database;
@@ -278,7 +277,6 @@ class DatabaseHelper {
     return null; // No readings available for this meter
   }
 
-
   // Settings
   Future<int> insertSetting(String key, String value) async {
     Database db = await database;
@@ -293,7 +291,7 @@ class DatabaseHelper {
   Future<Map<String, dynamic>?> getSetting(String key) async {
     Database db = await database;
     List<Map<String, dynamic>> result =
-    await db.query('settings', where: 'key = ?', whereArgs: [key]);
+        await db.query('settings', where: 'key = ?', whereArgs: [key]);
     return result.isNotEmpty ? result.first : null;
   }
 
@@ -344,5 +342,24 @@ class DatabaseHelper {
     }
 
     return null; // No previous reading found
+  }
+
+  Future<bool> isPriceDateRangeOverlapping({
+    required int meterId,
+    required String validFrom,
+    required String validTo,
+  }) async {
+    final Database db = await database;
+    final result = await db.rawQuery('''
+        SELECT * FROM prices 
+        WHERE meter_id = ? AND (
+          (? BETWEEN valid_from AND valid_to) OR
+          (? BETWEEN valid_from AND valid_to) OR
+          (valid_from BETWEEN ? AND ?) OR
+          (valid_from BETWEEN ? AND ?)
+        )
+      ''',
+        [meterId, validFrom, validTo, validFrom, validTo, validFrom, validTo]);
+    return result.isNotEmpty;
   }
 }

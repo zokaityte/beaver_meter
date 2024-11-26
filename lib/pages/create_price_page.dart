@@ -7,13 +7,15 @@ class CreatePricePage extends StatefulWidget {
   final int meterId;
   final String unit;
 
-  CreatePricePage({Key? key, required this.meterId, required this.unit}) : super(key: key);
+  const CreatePricePage({Key? key, required this.meterId, required this.unit})
+      : super(key: key);
 
   @override
   _CreatePricePageState createState() => _CreatePricePageState();
 }
 
 class _CreatePricePageState extends State<CreatePricePage> {
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController pricePerUnitController = TextEditingController();
   final TextEditingController basePriceController = TextEditingController();
   final TextEditingController validFromController = TextEditingController();
@@ -22,15 +24,14 @@ class _CreatePricePageState extends State<CreatePricePage> {
   DateTime? selectedValidFrom;
   DateTime? selectedValidTo;
 
-  // Date picker for "Valid From"
   Future<void> _selectValidFromDate(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: selectedValidFrom ?? DateTime.now(),
       firstDate: DateTime(2000),
-      lastDate: DateTime.now().add(Duration(days: 365)), // Allow up to a year in the future
+      lastDate: DateTime.now().add(Duration(days: 365)),
     );
-    if (pickedDate != null && pickedDate != selectedValidFrom) {
+    if (pickedDate != null) {
       setState(() {
         selectedValidFrom = pickedDate;
         validFromController.text = DateFormat('yyyy-MM-dd').format(pickedDate);
@@ -40,15 +41,15 @@ class _CreatePricePageState extends State<CreatePricePage> {
     }
   }
 
-  // Date picker for "Valid To"
   Future<void> _selectValidToDate(BuildContext context) async {
+    final DateTime now = DateTime.now();
     final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: selectedValidTo ?? DateTime.now(),
-      firstDate: selectedValidFrom ?? DateTime(2000),
-      lastDate: DateTime.now().add(Duration(days: 365)),
+      initialDate: selectedValidTo ?? selectedValidFrom ?? now,
+      firstDate: selectedValidFrom ?? now,
+      lastDate: now.add(Duration(days: 365)),
     );
-    if (pickedDate != null && pickedDate != selectedValidTo) {
+    if (pickedDate != null) {
       setState(() {
         selectedValidTo = pickedDate;
         validToController.text = DateFormat('yyyy-MM-dd').format(pickedDate);
@@ -56,28 +57,30 @@ class _CreatePricePageState extends State<CreatePricePage> {
     }
   }
 
-  // Save the price to the database
   Future<void> _savePrice(BuildContext context) async {
-    double? pricePerUnit = double.tryParse(pricePerUnitController.text);
-    double? basePrice = double.tryParse(basePriceController.text);
+    if (!_formKey.currentState!.validate()) return;
+
+    double pricePerUnit = double.parse(pricePerUnitController.text);
+    double basePrice = double.parse(basePriceController.text);
     String validFrom = validFromController.text;
     String validTo = validToController.text;
 
-    if (pricePerUnit == null || basePrice == null || validFrom.isEmpty || validTo.isEmpty) {
+    // Check for overlapping date range
+    bool isOverlapping = await DatabaseHelper().isPriceDateRangeOverlapping(
+      meterId: widget.meterId,
+      validFrom: validFrom,
+      validTo: validTo,
+    );
+
+    if (isOverlapping) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields with valid values.')),
+        const SnackBar(
+            content: Text(
+                'The selected date range overlaps with an existing price.')),
       );
       return;
     }
 
-    if (selectedValidTo != null && selectedValidFrom != null && selectedValidTo!.isBefore(selectedValidFrom!)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('"Valid To" date cannot be earlier than "Valid From" date.')),
-      );
-      return;
-    }
-
-    // Create a Price object
     final price = Price(
       pricePerUnit: pricePerUnit,
       basePrice: basePrice,
@@ -86,7 +89,6 @@ class _CreatePricePageState extends State<CreatePricePage> {
       meterId: widget.meterId,
     );
 
-    // Insert the Price object into the database
     int result = await DatabaseHelper().insertPrice(price);
 
     if (result != -1) {
@@ -96,7 +98,8 @@ class _CreatePricePageState extends State<CreatePricePage> {
       Navigator.pop(context);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to create price. Please try again.')),
+        const SnackBar(
+            content: Text('Failed to create price. Please try again.')),
       );
     }
   }
@@ -107,49 +110,87 @@ class _CreatePricePageState extends State<CreatePricePage> {
       appBar: AppBar(title: const Text('Create Price')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: pricePerUnitController,
-              decoration: InputDecoration(labelText: 'Price per ${widget.unit}'),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: basePriceController,
-              decoration: const InputDecoration(labelText: 'Base Price'),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: validFromController,
-              decoration: InputDecoration(
-                labelText: 'Valid From',
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.calendar_today),
-                  onPressed: () => _selectValidFromDate(context),
-                ),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: pricePerUnitController,
+                decoration:
+                    InputDecoration(labelText: 'Price per ${widget.unit}'),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null ||
+                      value.isEmpty ||
+                      double.tryParse(value) == null) {
+                    return 'Please enter a valid price per unit';
+                  }
+                  return null;
+                },
               ),
-              readOnly: true,
-            ),
-            TextField(
-              controller: validToController,
-              decoration: InputDecoration(
-                labelText: 'Valid To',
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.calendar_today),
-                  onPressed: selectedValidFrom == null
-                      ? null
-                      : () => _selectValidToDate(context),
-                ),
+              TextFormField(
+                controller: basePriceController,
+                decoration:
+                    const InputDecoration(labelText: 'Base Price (per month)'),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null ||
+                      value.isEmpty ||
+                      double.tryParse(value) == null) {
+                    return 'Please enter a valid base price';
+                  }
+                  return null;
+                },
               ),
-              readOnly: true,
-              enabled: selectedValidFrom != null,
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => _savePrice(context),
-              child: const Text('Save Price'),
-            ),
-          ],
+              TextFormField(
+                controller: validFromController,
+                decoration: InputDecoration(
+                  labelText: 'Valid From',
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.calendar_today),
+                    onPressed: () => _selectValidFromDate(context),
+                  ),
+                ),
+                readOnly: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select a valid "Valid From" date';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: validToController,
+                decoration: InputDecoration(
+                  labelText: 'Valid To',
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.calendar_today),
+                    onPressed: selectedValidFrom == null
+                        ? null
+                        : () => _selectValidToDate(context),
+                  ),
+                ),
+                readOnly: true,
+                enabled: selectedValidFrom != null,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select a valid "Valid To" date';
+                  }
+                  if (selectedValidTo != null &&
+                      selectedValidFrom != null &&
+                      selectedValidTo!.isBefore(selectedValidFrom!)) {
+                    return '"Valid To" cannot be earlier than "Valid From"';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () => _savePrice(context),
+                child: const Text('Save Price'),
+              ),
+            ],
+          ),
         ),
       ),
     );
