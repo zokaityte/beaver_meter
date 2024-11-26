@@ -123,7 +123,7 @@ class _CreatePricePageState extends State<CreatePricePage> {
                   if (value == null ||
                       value.isEmpty ||
                       double.tryParse(value) == null) {
-                    return 'Please enter a valid price per unit';
+                    return 'Please enter a valid price';
                   }
                   return null;
                 },
@@ -137,7 +137,7 @@ class _CreatePricePageState extends State<CreatePricePage> {
                   if (value == null ||
                       value.isEmpty ||
                       double.tryParse(value) == null) {
-                    return 'Please enter a valid base price';
+                    return 'Please enter a valid price';
                   }
                   return null;
                 },

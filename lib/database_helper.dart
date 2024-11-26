@@ -348,18 +348,30 @@ class DatabaseHelper {
     required int meterId,
     required String validFrom,
     required String validTo,
+    int? priceId, // Optional: Exclude this price ID
   }) async {
     final Database db = await database;
     final result = await db.rawQuery('''
-        SELECT * FROM prices 
-        WHERE meter_id = ? AND (
-          (? BETWEEN valid_from AND valid_to) OR
-          (? BETWEEN valid_from AND valid_to) OR
-          (valid_from BETWEEN ? AND ?) OR
-          (valid_from BETWEEN ? AND ?)
-        )
-      ''',
-        [meterId, validFrom, validTo, validFrom, validTo, validFrom, validTo]);
+      SELECT * FROM prices 
+      WHERE meter_id = ? 
+      AND id != ? 
+      AND (
+        (? BETWEEN valid_from AND valid_to) OR
+        (? BETWEEN valid_from AND valid_to) OR
+        (valid_from BETWEEN ? AND ?) OR
+        (valid_to BETWEEN ? AND ?)
+      )
+    ''', [
+      meterId,
+      priceId ?? -1,
+      validFrom,
+      validTo,
+      validFrom,
+      validTo,
+      validFrom,
+      validTo
+    ]);
+
     return result.isNotEmpty;
   }
 }

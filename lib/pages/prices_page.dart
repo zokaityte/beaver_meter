@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'create_price_page.dart'; // To create a new price
-import 'edit_price_page.dart';   // To edit an existing price
-import '../models/price.dart';   // Import Price model
-import '../models/meter.dart';   // Import Meter model
+import 'edit_price_page.dart'; // To edit an existing price
+import '../models/price.dart'; // Import Price model
+import '../models/meter.dart'; // Import Meter model
 import 'package:beaver_meter/database_helper.dart';
 
 class PricesPage extends StatefulWidget {
@@ -30,7 +30,8 @@ class _PricesPageState extends State<PricesPage> {
       isLoading = true;
     });
 
-    final fetchedPrices = await DatabaseHelper().getPricesByMeterIdAsObjects(widget.meter.id!);
+    final fetchedPrices =
+        await DatabaseHelper().getPricesByMeterIdAsObjects(widget.meter.id!);
 
     setState(() {
       prices = fetchedPrices;
@@ -61,7 +62,8 @@ class _PricesPageState extends State<PricesPage> {
                 return Card(
                   margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                   child: ListTile(
-                    title: Text('Price: \$${price.pricePerUnit} per ${widget.meter.unit}'),
+                    title: Text(
+                        'Price: \$${price.pricePerUnit} per ${widget.meter.unit}'),
                     subtitle: Text(
                       'Base Price: \$${price.basePrice}\nValid from: ${price.validFrom} to ${price.validTo}',
                     ),
@@ -70,12 +72,11 @@ class _PricesPageState extends State<PricesPage> {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => EditPricePage(price: price, unit: widget.meter.unit),
+                          builder: (context) => EditPricePage(
+                              price: price, unit: widget.meter.unit),
                         ),
                       );
-                      if (result != null) {
-                        _loadData(); // Refresh prices after returning
-                      }
+                      _loadData(); // Refresh prices after returning
                     },
                   ),
                 );
@@ -90,14 +91,16 @@ class _PricesPageState extends State<PricesPage> {
                 leading: Icon(Icons.add, color: Colors.white),
                 title: Text(
                   'Add Price',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold),
                 ),
                 onTap: () async {
                   // Navigate to the Create Price Page and refresh when returning
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => CreatePricePage(meterId: widget.meter.id!, unit: widget.meter.unit),
+                      builder: (context) => CreatePricePage(
+                          meterId: widget.meter.id!, unit: widget.meter.unit),
                     ),
                   );
                   _loadData(); // Refresh prices
