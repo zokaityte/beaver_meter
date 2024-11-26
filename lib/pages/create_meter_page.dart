@@ -89,25 +89,30 @@ class _CreateMeterPageState extends State<CreateMeterPage> {
               onPressed: () async {
                 String meterName = nameController.text;
 
-                if ([meterName, selectedUnit, selectedColorId, selectedIcon].contains(null) || meterName.isEmpty) {
+                if ([meterName, selectedUnit, selectedColorId, selectedIcon]
+                        .contains(null) ||
+                    meterName.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('All fields must be filled.')),
                   );
                   return;
                 }
 
-                bool nameExists = await DatabaseHelper().meterNameExists(meterName);
+                bool nameExists =
+                    await DatabaseHelper().meterNameExists(meterName);
 
                 if (nameExists) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Meter with that name already exists. Please choose a different name.')),
+                    SnackBar(
+                        content: Text(
+                            'Meter with that name already exists. Please choose a different name.')),
                   );
                 } else {
                   // Create Meter object
                   final meter = Meter(
                     name: meterName,
                     unit: selectedUnit!,
-                    color: meterColorsMap[selectedColorId]!.value, // Store color ARGB value
+                    color: selectedColorId!, // Store color id
                     icon: selectedIcon!.codePoint,
                   );
 
