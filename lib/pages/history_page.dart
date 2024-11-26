@@ -179,16 +179,14 @@ class _HistoryPageState extends State<HistoryPage> {
                           ),
                           onTap: () async {
                             // Navigate to the EditReadingPage and refresh data upon returning
-                            final result = await Navigator.push(
+                            await Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) =>
                                     EditReadingPage(reading: reading),
                               ),
                             );
-                            if (result == 'refresh') {
-                              _fetchReadingsWithMeterData(); // Refresh data
-                            }
+                            _fetchReadingsWithMeterData(); // Refresh data
                           },
                         ),
                       );

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:beaver_meter/database_helper.dart';
 import 'package:beaver_meter/models/price.dart';
+import '../providers/settings_provider.dart';
 
 class CreatePricePage extends StatefulWidget {
   final int meterId;
@@ -106,6 +109,8 @@ class _CreatePricePageState extends State<CreatePricePage> {
 
   @override
   Widget build(BuildContext context) {
+    final currencySymbol = context.watch<SettingsProvider>().currencySymbol;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Create Price')),
       body: Padding(
@@ -116,9 +121,30 @@ class _CreatePricePageState extends State<CreatePricePage> {
             children: [
               TextFormField(
                 controller: pricePerUnitController,
-                decoration:
-                    InputDecoration(labelText: 'Price per ${widget.unit}'),
+                decoration: InputDecoration(
+                  labelText: 'Price per ${widget.unit}',
+                  prefix: Row(
+                    mainAxisSize:
+                        MainAxisSize.min, // Ensures prefix fits its content
+                    children: [
+                      Text(
+                        currencySymbol,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color:
+                              Theme.of(context).hintColor, // Match label color
+                        ),
+                      ),
+                      const SizedBox(
+                          width: 8), // Add space between the symbol and text
+                    ],
+                  ),
+                ),
                 keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(
+                      RegExp(r'^\d*\.?\d*')), // Allow digits and dots
+                ],
                 validator: (value) {
                   if (value == null ||
                       value.isEmpty ||
@@ -130,9 +156,30 @@ class _CreatePricePageState extends State<CreatePricePage> {
               ),
               TextFormField(
                 controller: basePriceController,
-                decoration:
-                    const InputDecoration(labelText: 'Base Price (per month)'),
+                decoration: InputDecoration(
+                  labelText: 'Base Price (per month)',
+                  prefix: Row(
+                    mainAxisSize:
+                        MainAxisSize.min, // Ensures prefix fits its content
+                    children: [
+                      Text(
+                        currencySymbol,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color:
+                              Theme.of(context).hintColor, // Match label color
+                        ),
+                      ),
+                      const SizedBox(
+                          width: 8), // Add space between the symbol and text
+                    ],
+                  ),
+                ),
                 keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(
+                      RegExp(r'^\d*\.?\d*')), // Allow digits and dots
+                ],
                 validator: (value) {
                   if (value == null ||
                       value.isEmpty ||
