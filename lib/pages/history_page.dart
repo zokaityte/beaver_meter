@@ -56,8 +56,11 @@ class _HistoryPageState extends State<HistoryPage> {
     }
   }
 
-  String calculateConsumption(String currentValueStr, String? previousValueStr, String unit) {
-    if (currentValueStr.isEmpty || previousValueStr == null || previousValueStr.isEmpty) {
+  String calculateConsumption(
+      String currentValueStr, String? previousValueStr, String unit) {
+    if (currentValueStr.isEmpty ||
+        previousValueStr == null ||
+        previousValueStr.isEmpty) {
       return 'No previous data';
     }
 
@@ -134,57 +137,63 @@ class _HistoryPageState extends State<HistoryPage> {
           ),
           Expanded(
             child: filteredReadings.isEmpty
-                ? Center(child: Text('No readings available for the selected meter.'))
+                ? Center(
+                    child:
+                        Text('No readings available for the selected meter.'))
                 : ListView.builder(
-              itemCount: filteredReadings.length,
-              itemBuilder: (context, index) {
-                final readingData = filteredReadings[index];
-                final Reading reading = readingData['reading'];
-                final Meter meter = readingData['meter'];
-                final previousReading = index < filteredReadings.length - 1
-                    ? filteredReadings[index + 1]['reading']
-                    : null;
+                    itemCount: filteredReadings.length,
+                    itemBuilder: (context, index) {
+                      final readingData = filteredReadings[index];
+                      final Reading reading = readingData['reading'];
+                      final Meter meter = readingData['meter'];
+                      final previousReading =
+                          index < filteredReadings.length - 1
+                              ? filteredReadings[index + 1]['reading']
+                              : null;
 
-                return Card(
-                  margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                  child: ListTile(
-                    contentPadding: EdgeInsets.all(8.0),
-                    title: Text(
-                      '${meter.name}',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Value: ${reading.value} ${meter.unit}'),
-                        Text('Date: ${reading.date}'),
-                        if (previousReading != null)
-                          Text(
-                            calculateConsumption(
-                              reading.value.toString(),
-                              previousReading.value.toString(),
-                              meter.unit,
-                            ),
-                            style: TextStyle(color: Colors.green),
+                      return Card(
+                        margin: EdgeInsets.symmetric(
+                            vertical: 8.0, horizontal: 16.0),
+                        child: ListTile(
+                          contentPadding: EdgeInsets.all(8.0),
+                          title: Text(
+                            '${meter.name}',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 16.0),
                           ),
-                      ],
-                    ),
-                    onTap: () async {
-                      // Navigate to the EditReadingPage and refresh data upon returning
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => EditReadingPage(reading: reading),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Value: ${reading.value} ${meter.unit}'),
+                              Text('Date: ${reading.date}'),
+                              if (previousReading != null)
+                                Text(
+                                  calculateConsumption(
+                                    reading.value.toString(),
+                                    previousReading.value.toString(),
+                                    meter.unit,
+                                  ),
+                                  style: TextStyle(color: Colors.green),
+                                ),
+                            ],
+                          ),
+                          onTap: () async {
+                            // Navigate to the EditReadingPage and refresh data upon returning
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    EditReadingPage(reading: reading),
+                              ),
+                            );
+                            if (result == 'refresh') {
+                              _fetchReadingsWithMeterData(); // Refresh data
+                            }
+                          },
                         ),
                       );
-                      if (result == 'refresh') {
-                        _fetchReadingsWithMeterData(); // Refresh data
-                      }
                     },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),

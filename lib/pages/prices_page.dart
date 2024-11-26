@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'create_price_page.dart'; // To create a new price
 import 'edit_price_page.dart'; // To edit an existing price
 import '../models/price.dart'; // Import Price model
 import '../models/meter.dart'; // Import Meter model
+import '../providers/settings_provider.dart';
 import 'package:beaver_meter/database_helper.dart';
 
 class PricesPage extends StatefulWidget {
@@ -41,6 +43,8 @@ class _PricesPageState extends State<PricesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final currencySymbol = context.watch<SettingsProvider>().currencySymbol;
+
     if (isLoading) {
       return Scaffold(
         appBar: AppBar(title: Text('Prices for ${widget.meter.name}')),
@@ -63,17 +67,19 @@ class _PricesPageState extends State<PricesPage> {
                   margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                   child: ListTile(
                     title: Text(
-                        'Price: \$${price.pricePerUnit} per ${widget.meter.unit}'),
+                        'Price: $currencySymbol${price.pricePerUnit} per ${widget.meter.unit}'),
                     subtitle: Text(
-                      'Base Price: \$${price.basePrice}\nValid from: ${price.validFrom} to ${price.validTo}',
+                      'Base Price: $currencySymbol${price.basePrice}\nValid from: ${price.validFrom} to ${price.validTo}',
                     ),
                     onTap: () async {
                       // Navigate to the Edit Price Page and refresh upon returning
-                      final result = await Navigator.push(
+                      await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => EditPricePage(
-                              price: price, unit: widget.meter.unit),
+                            price: price,
+                            unit: widget.meter.unit,
+                          ),
                         ),
                       );
                       _loadData(); // Refresh prices after returning

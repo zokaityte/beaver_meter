@@ -11,7 +11,6 @@ class SettingsPage extends StatelessWidget {
     final settingsProvider = context.watch<SettingsProvider>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
           ListTile(
