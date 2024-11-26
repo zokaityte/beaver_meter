@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -83,6 +85,46 @@ class DatabaseHelper {
       'key': 'currency',
       'value': 'USD',
     });
+    // Populate the database with sample data
+    await populateDatabaseFromJson(db);
+  }
+
+  /// Populate the database using sample data from a JSON file
+  Future<void> populateDatabaseFromJson(Database db) async {
+    // Load the JSON data from assets
+    String jsonData =
+        await rootBundle.loadString('assets/data/sample_data.json');
+    Map<String, dynamic> data = jsonDecode(jsonData);
+
+    // Insert meters
+    for (var meter in data['meters']) {
+      await db.insert('meters', {
+        'name': meter['name'],
+        'unit': meter['unit'],
+        'color': meter['color'],
+        'icon': meter['icon'],
+      });
+    }
+
+    // Insert prices
+    for (var price in data['prices']) {
+      await db.insert('prices', {
+        'price_per_unit': price['price_per_unit'],
+        'base_price': price['base_price'],
+        'valid_from': price['valid_from'],
+        'valid_to': price['valid_to'],
+        'meter_id': price['meter_id'],
+      });
+    }
+
+    // Insert readings
+    for (var reading in data['readings']) {
+      await db.insert('readings', {
+        'meter_id': reading['meter_id'],
+        'value': reading['value'],
+        'date': reading['date'],
+      });
+    }
   }
 
   // ********** CRUD Methods **********
