@@ -114,6 +114,7 @@ class DatabaseHelper {
       m.name AS meter_name,
       m.color AS meter_color,
       m.icon AS meter_icon,
+      m.unit AS meter_unit,
       lr.month,
       CASE 
           WHEN lr.prev_last_reading_value IS NULL THEN 0

@@ -35,17 +35,20 @@ class _TrendsPageState extends State<TrendsPage> {
       return '${selectedYear}-${month.toString().padLeft(2, '0')}'; // e.g., 2024-01
     });
 
-    // Populate all months with null costs initially
+    // Populate all months with null costs and usages initially
     for (var row in data) {
       final meterName = row['meter_name'];
       final meterColor = row['meter_color'];
+      final meterUnit = row['meter_unit'];
 
       if (!graphData.containsKey(meterName)) {
         graphData[meterName] = allMonths.map((month) {
           return {
             'month': month,
             'cost': null, // Set cost to null for missing data
+            'usage': null, // Set usage to null for missing data
             'color': meterColor,
+            'unit': meterUnit,
           };
         }).toList();
       }
@@ -56,10 +59,12 @@ class _TrendsPageState extends State<TrendsPage> {
       final meterName = row['meter_name'];
       final month = row['month'];
       final cost = row['total_cost'];
+      final usage = row['monthly_usage'];
 
       final monthIndex = allMonths.indexOf(month);
       if (monthIndex != -1) {
         graphData[meterName]![monthIndex]['cost'] = cost;
+        graphData[meterName]![monthIndex]['usage'] = usage;
       }
     }
 
@@ -115,26 +120,67 @@ class _TrendsPageState extends State<TrendsPage> {
           final graphData = snapshot.data!;
           return Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: ListView(
               children: [
-                // Add title for the graph
-                Text(
-                  'Cost',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                // Original graph
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Add title for the graph
+                    Text(
+                      'Cost',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 8), // Spacing between title and legend
+                    buildLegend(graphData),
+                    SizedBox(height: 16), // Spacing between legend and chart
+                    Center(
+                      child: AspectRatio(
+                        aspectRatio: 1.5,
+                        child: LineChart(
+                            buildLineChart(graphData, currencySymbol)),
+                      ),
+                    ),
+                  ],
                 ),
-                SizedBox(height: 8), // Spacing between title and legend
-                buildLegend(graphData),
-                SizedBox(height: 16), // Spacing between legend and chart
-                Center(
-                  child: AspectRatio(
-                    aspectRatio: 1.5,
-                    child: LineChart(buildLineChart(graphData, currencySymbol)),
-                  ),
-                ),
+                SizedBox(
+                    height:
+                        32), // Spacing between the cost graph and the usage graphs
+
+                // New bar charts for each meter
+                ...graphData.entries.map((entry) {
+                  final meterName = entry.key;
+                  final data = entry.value;
+                  final meterColor =
+                      meterColorsMap[data.first['color']] ?? Colors.grey;
+                  final meterUnit = data.first['unit'] ?? '';
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        meterName,
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        'Unit: $meterUnit',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                      SizedBox(height: 16),
+                      Center(
+                        child: AspectRatio(
+                          aspectRatio: 1.5,
+                          child: BarChart(
+                              buildBarChart(data, meterColor, meterUnit)),
+                        ),
+                      ),
+                      SizedBox(height: 32), // Spacing between graphs
+                    ],
+                  );
+                }).toList(),
               ],
             ),
           );
@@ -306,7 +352,7 @@ class _TrendsPageState extends State<TrendsPage> {
               final meterName = graphData.keys.elementAt(touchedSpot.barIndex);
               final meterData = graphData[meterName]?[monthIndex];
               final cost = (meterData?['cost'] ?? 0).toStringAsFixed(2);
-              monthData[meterName] = '\$$cost';
+              monthData[meterName] = '$currencySymbol$cost';
             }
 
             // Construct consolidated tooltip
@@ -338,7 +384,7 @@ class _TrendsPageState extends State<TrendsPage> {
               if (entry.key == 0) {
                 return LineTooltipItem(
                   tooltipText.trim(),
-                  TextStyle(color: Colors.white, fontSize: 10),
+                  TextStyle(color: Colors.white, fontSize: 12),
                 );
               } else {
                 return null;
@@ -366,5 +412,176 @@ class _TrendsPageState extends State<TrendsPage> {
 
     return ((maxY / interval).ceil() * interval)
         .toDouble(); // Round to the nearest interval
+  }
+
+  BarChartData buildBarChart(
+      List<Map<String, dynamic>> data, Color barColor, String unit) {
+    final double interval = _getYInterval(data);
+    final double maxY = getRoundedMaxForMeter(data, interval);
+
+    List<BarChartGroupData> barGroups = data.asMap().entries.map((entry) {
+      final monthIndex = entry.key;
+      final usage = entry.value['usage'] != null
+          ? (entry.value['usage'] as num).toDouble()
+          : 0.0; // Use 0 for missing values
+
+      return BarChartGroupData(
+        x: monthIndex,
+        barRods: [
+          BarChartRodData(
+            toY: usage,
+            color: barColor,
+            width: 16,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ],
+      );
+    }).toList();
+
+    return BarChartData(
+      barGroups: barGroups,
+      alignment: BarChartAlignment.spaceEvenly,
+      maxY: maxY,
+      minY: 0,
+      gridData: FlGridData(
+        show: true,
+        horizontalInterval: interval,
+      ),
+      titlesData: FlTitlesData(
+        bottomTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            reservedSize: 40,
+            interval: 1,
+            getTitlesWidget: (value, meta) {
+              const months = [
+                'Jan',
+                'Feb',
+                'Mar',
+                'Apr',
+                'May',
+                'Jun',
+                'Jul',
+                'Aug',
+                'Sep',
+                'Oct',
+                'Nov',
+                'Dec'
+              ];
+              if (value.toInt() >= 0 && value.toInt() < months.length) {
+                return SideTitleWidget(
+                  axisSide: meta.axisSide,
+                  child: Text(
+                    months[value.toInt()],
+                    style: TextStyle(fontSize: 10),
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+        leftTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            reservedSize: 40,
+            interval: interval,
+            getTitlesWidget: (value, meta) {
+              return Text(
+                '${value.toInt()}',
+                style: TextStyle(fontSize: 10),
+              );
+            },
+          ),
+        ),
+        rightTitles: AxisTitles(
+          sideTitles: SideTitles(showTitles: false),
+        ),
+        topTitles: AxisTitles(
+          sideTitles: SideTitles(showTitles: false),
+        ),
+      ),
+      borderData: FlBorderData(show: false),
+      barTouchData: BarTouchData(
+        enabled: true,
+        touchTooltipData: BarTouchTooltipData(
+          getTooltipItem: (group, groupIndex, rod, rodIndex) {
+            final monthIndex = group.x.toInt();
+            const months = [
+              'Jan',
+              'Feb',
+              'Mar',
+              'Apr',
+              'May',
+              'Jun',
+              'Jul',
+              'Aug',
+              'Sep',
+              'Oct',
+              'Nov',
+              'Dec'
+            ];
+            final monthName = months[monthIndex];
+
+            return BarTooltipItem(
+              '$monthName $selectedYear\n',
+              TextStyle(color: Colors.white),
+              children: [
+                TextSpan(
+                  text: '${rod.toY.toStringAsFixed(2)} $unit',
+                  style: TextStyle(
+                    color: Colors.yellowAccent,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Utility function to round up to the nearest interval
+  double getRoundedMaxForMeter(
+      List<Map<String, dynamic>> data, double interval) {
+    double maxY = 0.0;
+
+    for (var entry in data) {
+      final usage = entry['usage'];
+      if (usage != null && usage > maxY) {
+        maxY = usage.toDouble();
+      }
+    }
+
+    return ((maxY / interval).ceil() * interval)
+        .toDouble(); // Round to the nearest interval
+  }
+
+  /// Dynamically calculate Y-axis interval based on max usage
+  double _getYInterval(List<Map<String, dynamic>> data) {
+    double maxY = 0.0;
+
+    for (var entry in data) {
+      final usage = entry['usage'];
+      if (usage != null && usage > maxY) {
+        maxY = usage.toDouble();
+      }
+    }
+
+    // Determine interval based on maxY
+    if (maxY <= 10) {
+      return 1.0;
+    } else if (maxY <= 50) {
+      return 5.0;
+    } else if (maxY <= 100) {
+      return 10.0;
+    } else if (maxY <= 500) {
+      return 50.0;
+    } else if (maxY <= 1000) {
+      return 100.0;
+    } else {
+      return 200.0;
+    }
   }
 }
