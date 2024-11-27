@@ -41,6 +41,7 @@ dependencies:
   currency_picker: ^2.0.21
   provider: ^6.1.2
   money2: ^3.3.0
+  fl_chart: ^0.69.2
 
 dev_dependencies:
   flutter_test:

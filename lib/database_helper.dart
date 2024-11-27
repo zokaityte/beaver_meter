@@ -89,6 +89,72 @@ class DatabaseHelper {
     await populateDatabaseFromJson(db);
   }
 
+  Future<List<Map<String, dynamic>>> getMonthlyUsageAndCost(String year) async {
+    final db = await database;
+    return await db.rawQuery('''
+  WITH MonthlyReadings AS (
+      SELECT
+          meter_id,
+          strftime('%Y-%m', date) AS month,
+          MAX(date) AS last_reading_date
+      FROM readings
+      GROUP BY meter_id, month
+  ),
+  LastReadings AS (
+      SELECT
+          r.meter_id,
+          mr.month,
+          r.value AS last_reading_value,
+          LAG(r.value) OVER (PARTITION BY r.meter_id ORDER BY mr.month) AS prev_last_reading_value
+      FROM MonthlyReadings mr
+      JOIN readings r ON r.meter_id = mr.meter_id AND r.date = mr.last_reading_date
+  )
+  SELECT
+      m.id AS meter_id,
+      m.name AS meter_name,
+      m.color AS meter_color,
+      m.icon AS meter_icon,
+      m.unit AS meter_unit,
+      lr.month,
+      CASE 
+          WHEN lr.prev_last_reading_value IS NULL THEN 0
+          ELSE CAST(lr.last_reading_value - lr.prev_last_reading_value AS INTEGER)
+      END AS monthly_usage,
+      CASE 
+          WHEN lr.prev_last_reading_value IS NULL THEN 0
+          ELSE p.base_price + (CAST(lr.last_reading_value - lr.prev_last_reading_value AS INTEGER) * p.price_per_unit)
+      END AS total_cost
+  FROM
+      LastReadings lr
+  JOIN meters m ON m.id = lr.meter_id
+  JOIN prices p ON m.id = p.meter_id AND lr.month || '-01' BETWEEN p.valid_from AND p.valid_to
+  WHERE strftime('%Y', lr.month || '-01') = ?
+  ORDER BY
+      m.id, lr.month;
+  ''', [year]);
+  }
+
+  Future<List<Map<String, dynamic>>> getReadingsWithPreviousValues() async {
+    final db = await database;
+
+    final result = await db.rawQuery('''
+    SELECT
+        r.id AS reading_id,
+        r.value AS current_value,
+        r.date AS current_date,
+        m.id AS meter_id,
+        m.name AS meter_name,
+        m.unit AS meter_unit,
+        m.icon AS meter_icon,
+        LAG(r.value) OVER (PARTITION BY m.id ORDER BY r.date ASC) AS previous_value
+    FROM readings r
+    JOIN meters m ON r.meter_id = m.id
+    ORDER BY r.date DESC, m.id DESC; -- Sort by date DESC for display
+  ''');
+
+    return result;
+  }
+
   /// Populate the database using sample data from a JSON file
   Future<void> populateDatabaseFromJson(Database db) async {
     // Load the JSON data from assets

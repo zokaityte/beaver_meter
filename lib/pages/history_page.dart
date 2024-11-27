@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:beaver_meter/database_helper.dart';
-import 'package:beaver_meter/models/reading.dart';
 import 'package:beaver_meter/models/meter.dart';
-import 'package:beaver_meter/pages/edit_reading_page.dart'; // Import the EditReadingPage
+import 'package:beaver_meter/pages/edit_reading_page.dart';
+
+import '../models/reading.dart';
 
 class HistoryPage extends StatefulWidget {
   @override
@@ -38,8 +39,9 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Future<void> _fetchReadingsWithMeterData() async {
     try {
-      // Fetch readings joined with meter data
-      final fetchedReadings = await DatabaseHelper().getReadingsWithMeterData();
+      // Fetch readings with previous values included
+      final fetchedReadings =
+          await DatabaseHelper().getReadingsWithPreviousValues();
       if (mounted) {
         setState(() {
           readingsWithMeterData = fetchedReadings;
@@ -56,27 +58,12 @@ class _HistoryPageState extends State<HistoryPage> {
     }
   }
 
-  String calculateConsumption(
-      String currentValueStr, String? previousValueStr, String unit) {
-    if (currentValueStr.isEmpty ||
-        previousValueStr == null ||
-        previousValueStr.isEmpty) {
-      return 'No previous data';
-    }
-
-    int currentValue = int.tryParse(currentValueStr) ?? 0;
-    int previousValue = int.tryParse(previousValueStr) ?? 0;
-
-    int consumption = currentValue - previousValue;
-    return '$consumption $unit consumed';
-  }
-
   List<Map<String, dynamic>> _filterReadingsByMeter() {
     if (selectedMeter == null) {
       return readingsWithMeterData; // Show all readings if no meter is selected
     }
     return readingsWithMeterData
-        .where((readingData) => readingData['meter'].id == selectedMeter!.id)
+        .where((readingData) => readingData['meter_id'] == selectedMeter!.id)
         .toList();
   }
 
@@ -144,12 +131,11 @@ class _HistoryPageState extends State<HistoryPage> {
                     itemCount: filteredReadings.length,
                     itemBuilder: (context, index) {
                       final readingData = filteredReadings[index];
-                      final Reading reading = readingData['reading'];
-                      final Meter meter = readingData['meter'];
-                      final previousReading =
-                          index < filteredReadings.length - 1
-                              ? filteredReadings[index + 1]['reading']
-                              : null;
+                      final String meterName = readingData['meter_name'];
+                      final String unit = readingData['meter_unit'];
+                      final int currentValue = readingData['current_value'];
+                      final int? previousValue = readingData['previous_value'];
+                      final String date = readingData['current_date'];
 
                       return Card(
                         margin: EdgeInsets.symmetric(
@@ -157,23 +143,24 @@ class _HistoryPageState extends State<HistoryPage> {
                         child: ListTile(
                           contentPadding: EdgeInsets.all(8.0),
                           title: Text(
-                            '${meter.name}',
+                            meterName,
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 16.0),
                           ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Value: ${reading.value} ${meter.unit}'),
-                              Text('Date: ${reading.date}'),
-                              if (previousReading != null)
+                              Text('Value: $currentValue $unit'),
+                              Text('Date: $date'),
+                              if (previousValue != null)
                                 Text(
-                                  calculateConsumption(
-                                    reading.value.toString(),
-                                    previousReading.value.toString(),
-                                    meter.unit,
-                                  ),
+                                  '${currentValue - previousValue} $unit consumed',
                                   style: TextStyle(color: Colors.green),
+                                )
+                              else
+                                Text(
+                                  'No previous data',
+                                  style: TextStyle(color: Colors.red),
                                 ),
                             ],
                           ),
@@ -182,8 +169,14 @@ class _HistoryPageState extends State<HistoryPage> {
                             await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) =>
-                                    EditReadingPage(reading: reading),
+                                builder: (context) => EditReadingPage(
+                                  reading: Reading(
+                                    id: readingData['reading_id'],
+                                    meterId: readingData['meter_id'],
+                                    value: currentValue,
+                                    date: date,
+                                  ),
+                                ),
                               ),
                             );
                             _fetchReadingsWithMeterData(); // Refresh data
