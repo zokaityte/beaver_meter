@@ -10,6 +10,8 @@ class TrendsPage extends StatefulWidget {
 }
 
 class _TrendsPageState extends State<TrendsPage> {
+  int selectedYear = DateTime.now().year;
+
   late Future<Map<String, List<Map<String, dynamic>>>> graphDataFuture;
 
   @override
@@ -19,30 +21,76 @@ class _TrendsPageState extends State<TrendsPage> {
   }
 
   Future<Map<String, List<Map<String, dynamic>>>> prepareGraphData() async {
-    final data = await DatabaseHelper().getMonthlyUsageAndCost();
+    final data =
+        await DatabaseHelper().getMonthlyUsageAndCost(selectedYear.toString());
+
+    // Initialize graphData with placeholders for all months
     Map<String, List<Map<String, dynamic>>> graphData = {};
 
+    // Create a list of all months (Jan-Dec)
+    final allMonths = List.generate(12, (index) {
+      final month = index + 1; // 1-based month
+      return '${selectedYear}-${month.toString().padLeft(2, '0')}'; // e.g., 2024-01
+    });
+
+    // Populate all months with null costs initially
     for (var row in data) {
       final meterName = row['meter_name'];
-      final meterColor =
-          row['meter_color']; // Assuming color is part of your query
-      final month = row['month'];
-      final cost = row['total_cost'] ?? 0.0;
+      final meterColor = row['meter_color'];
 
       if (!graphData.containsKey(meterName)) {
-        graphData[meterName] = [];
+        graphData[meterName] = allMonths.map((month) {
+          return {
+            'month': month,
+            'cost': null, // Set cost to null for missing data
+            'color': meterColor,
+          };
+        }).toList();
       }
-      graphData[meterName]
-          ?.add({'month': month, 'cost': cost, 'color': meterColor});
+    }
+
+    // Override placeholders with actual data
+    for (var row in data) {
+      final meterName = row['meter_name'];
+      final month = row['month'];
+      final cost = row['total_cost'];
+
+      final monthIndex = allMonths.indexOf(month);
+      if (monthIndex != -1) {
+        graphData[meterName]![monthIndex]['cost'] = cost;
+      }
     }
 
     return graphData;
   }
 
+  void changeYear(int year) {
+    setState(() {
+      selectedYear = year;
+      graphDataFuture = prepareGraphData();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Cost Trends')),
+      appBar: AppBar(
+        title: Text('Cost Trends - $selectedYear'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () {
+              changeYear(selectedYear - 1); // Go to the previous year
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.arrow_forward),
+            onPressed: () {
+              changeYear(selectedYear + 1); // Go to the next year
+            },
+          ),
+        ],
+      ),
       body: FutureBuilder<Map<String, List<Map<String, dynamic>>>>(
         future: graphDataFuture,
         builder: (context, snapshot) {
@@ -51,7 +99,7 @@ class _TrendsPageState extends State<TrendsPage> {
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No data available'));
+            return Center(child: Text('No data available for $selectedYear'));
           }
 
           final graphData = snapshot.data!;
@@ -60,11 +108,11 @@ class _TrendsPageState extends State<TrendsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                buildLegend(graphData), // Add the legend above the chart
-                SizedBox(height: 16), // Spacing between legend and chart
+                buildLegend(graphData),
+                SizedBox(height: 16),
                 Center(
                   child: AspectRatio(
-                    aspectRatio: 1, // Make the chart square
+                    aspectRatio: 1,
                     child: LineChart(buildLineChart(graphData)),
                   ),
                 ),
@@ -113,8 +161,14 @@ class _TrendsPageState extends State<TrendsPage> {
     graphData.forEach((meterName, data) {
       final color = meterColorsMap[data.first['color']] ?? Colors.grey;
 
-      List<FlSpot> spots = data.asMap().entries.map((entry) {
-        final monthIndex = entry.key.toDouble();
+      // Create spots only for months with non-null costs
+      List<FlSpot> spots = data
+          .asMap()
+          .entries
+          .where((entry) =>
+              entry.value['cost'] != null) // Skip months with null cost
+          .map((entry) {
+        final monthIndex = entry.key.toDouble(); // Index from 0 to 11 (Jan-Dec)
         final cost = (entry.value['cost'] as num).toDouble();
         return FlSpot(monthIndex, cost);
       }).toList();
@@ -129,19 +183,10 @@ class _TrendsPageState extends State<TrendsPage> {
       ));
     });
 
-    // Calculate X and Y-axis ranges
-    double maxValue = graphData.values
-        .expand((data) => data)
-        .map((e) => (e['cost'] as num).toDouble())
-        .reduce((a, b) => a > b ? a : b);
-    double roundedMax = getRoundedMax(maxValue, 40);
-
-    double maxX = graphData.values.first.length - 0.5;
-
+    // Set the X-axis range to cover Jan (0) to Dec (11)
     return LineChartData(
       minY: 0,
-      maxY: roundedMax,
-      maxX: maxX,
+      maxX: 11, // Ensure X-axis covers all 12 months (Jan = 0, Dec = 11)
       lineBarsData: lines,
       titlesData: FlTitlesData(
         leftTitles: AxisTitles(
@@ -162,28 +207,27 @@ class _TrendsPageState extends State<TrendsPage> {
             showTitles: true,
             reservedSize: 40,
             getTitlesWidget: (value, meta) {
-              int totalMonths = graphData.values.first.length;
-              int tickInterval = (totalMonths / 6).ceil();
-
-              if (value.toInt() % tickInterval == 0 &&
-                  value.toInt() >= 0 &&
-                  value.toInt() < totalMonths) {
-                final rawMonth = graphData.values.first[value.toInt()]['month'];
-                try {
-                  final date = DateTime.parse('$rawMonth-01');
-                  final formattedMonth =
-                      '${_getMonthName(date.month)}\n${date.year}';
-                  return Text(
-                    formattedMonth,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 10),
-                  );
-                } catch (e) {
-                  return Text(
-                    'Invalid Date',
-                    style: TextStyle(fontSize: 8, color: Colors.red),
-                  );
-                }
+              // Map X-axis value (0-11) to month names
+              const months = [
+                'Jan',
+                'Feb',
+                'Mar',
+                'Apr',
+                'May',
+                'Jun',
+                'Jul',
+                'Aug',
+                'Sep',
+                'Oct',
+                'Nov',
+                'Dec'
+              ];
+              if (value.toInt() >= 0 && value.toInt() < 12) {
+                return Text(
+                  months[value.toInt()],
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 10),
+                );
               }
               return Text('');
             },
@@ -199,15 +243,12 @@ class _TrendsPageState extends State<TrendsPage> {
             getTitlesWidget: (value, meta) {
               if (value == meta.max) {
                 return Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text(
-                    'Cost',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                );
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      'Cost',
+                      style:
+                          TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    ));
               }
               return const SizedBox.shrink();
             },
@@ -223,32 +264,53 @@ class _TrendsPageState extends State<TrendsPage> {
           fitInsideVertically: true,
           tooltipRoundedRadius: 8,
           getTooltipItems: (touchedSpots) {
-            return touchedSpots.map((touchedSpot) {
-              final monthIndex = touchedSpot.x.toInt();
+            if (touchedSpots.isEmpty) return [];
+
+            final monthIndex = touchedSpots.first.x.toInt();
+            final monthData = <String, String>{};
+
+            // Collect data for all meters at the same x-value
+            for (var touchedSpot in touchedSpots) {
               final meterName = graphData.keys.elementAt(touchedSpot.barIndex);
               final meterData = graphData[meterName]?[monthIndex];
-              final rawMonth = meterData?['month'];
-
-              String tooltipText = '';
-
-              // Retrieve the month and year
-              if (rawMonth != null) {
-                try {
-                  final date = DateTime.parse('$rawMonth-01');
-                  tooltipText += '${_getMonthName(date.month)} ${date.year}\n';
-                } catch (e) {
-                  tooltipText += 'Invalid Date\n';
-                }
-              }
-
-              // Add meter-specific cost
               final cost = (meterData?['cost'] ?? 0).toStringAsFixed(2);
-              tooltipText += '$meterName:  \$$cost';
+              monthData[meterName] = '\$$cost';
+            }
 
-              return LineTooltipItem(
-                tooltipText.trim(),
-                TextStyle(color: Colors.black, fontSize: 12),
-              );
+            // Construct consolidated tooltip
+            String tooltipText = '';
+            if (monthData.isNotEmpty) {
+              const months = [
+                'Jan',
+                'Feb',
+                'Mar',
+                'Apr',
+                'May',
+                'Jun',
+                'Jul',
+                'Aug',
+                'Sep',
+                'Oct',
+                'Nov',
+                'Dec'
+              ];
+              final monthName = months[monthIndex];
+              tooltipText += '$monthName ${selectedYear}\n';
+              monthData.forEach((meterName, cost) {
+                tooltipText += '$meterName: $cost\n';
+              });
+            }
+
+            // Create tooltip only for the first touchedSpot
+            return touchedSpots.asMap().entries.map((entry) {
+              if (entry.key == 0) {
+                return LineTooltipItem(
+                  tooltipText.trim(),
+                  TextStyle(color: Colors.black, fontSize: 12),
+                );
+              } else {
+                return null;
+              }
             }).toList();
           },
         ),

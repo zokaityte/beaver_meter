@@ -89,7 +89,7 @@ class DatabaseHelper {
     await populateDatabaseFromJson(db);
   }
 
-  Future<List<Map<String, dynamic>>> getMonthlyUsageAndCost() async {
+  Future<List<Map<String, dynamic>>> getMonthlyUsageAndCost(String year) async {
     final db = await database;
     return await db.rawQuery('''
   WITH MonthlyReadings AS (
@@ -108,13 +108,6 @@ class DatabaseHelper {
           LAG(r.value) OVER (PARTITION BY r.meter_id ORDER BY mr.month) AS prev_last_reading_value
       FROM MonthlyReadings mr
       JOIN readings r ON r.meter_id = mr.meter_id AND r.date = mr.last_reading_date
-  ),
-  FirstMonthPerMeter AS (
-      SELECT
-          meter_id,
-          MIN(month) AS first_month
-      FROM MonthlyReadings
-      GROUP BY meter_id
   )
   SELECT
       m.id AS meter_id,
@@ -134,11 +127,10 @@ class DatabaseHelper {
       LastReadings lr
   JOIN meters m ON m.id = lr.meter_id
   JOIN prices p ON m.id = p.meter_id AND lr.month || '-01' BETWEEN p.valid_from AND p.valid_to
-  LEFT JOIN FirstMonthPerMeter fmm ON lr.meter_id = fmm.meter_id
-  WHERE lr.month > fmm.first_month -- Exclude the first month
+  WHERE strftime('%Y', lr.month || '-01') = ?
   ORDER BY
       m.id, lr.month;
-  ''');
+  ''', [year]);
   }
 
   /// Populate the database using sample data from a JSON file
