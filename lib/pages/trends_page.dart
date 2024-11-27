@@ -1,8 +1,10 @@
 import 'package:beaver_meter/database_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
 
 import '../constants/config.dart';
+import '../providers/settings_provider.dart';
 
 class TrendsPage extends StatefulWidget {
   @override
@@ -73,6 +75,8 @@ class _TrendsPageState extends State<TrendsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final currencySymbol = context.watch<SettingsProvider>().currencySymbol;
+
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -128,7 +132,7 @@ class _TrendsPageState extends State<TrendsPage> {
                 Center(
                   child: AspectRatio(
                     aspectRatio: 1,
-                    child: LineChart(buildLineChart(graphData)),
+                    child: LineChart(buildLineChart(graphData, currencySymbol)),
                   ),
                 ),
               ],
@@ -170,7 +174,8 @@ class _TrendsPageState extends State<TrendsPage> {
   }
 
   LineChartData buildLineChart(
-      Map<String, List<Map<String, dynamic>>> graphData) {
+      Map<String, List<Map<String, dynamic>>> graphData,
+      String currencySymbol) {
     final double interval = 40.0;
     final double maxY = getRoundedMax(graphData, interval);
 
@@ -266,7 +271,7 @@ class _TrendsPageState extends State<TrendsPage> {
             interval: interval, // Ensure grid aligns with Y-axis ticks
             getTitlesWidget: (value, meta) {
               return Text(
-                '\$${value.toInt()}',
+                '$currencySymbol ${value.toInt()}',
                 style: TextStyle(fontSize: 10),
               );
             },
@@ -333,7 +338,7 @@ class _TrendsPageState extends State<TrendsPage> {
               if (entry.key == 0) {
                 return LineTooltipItem(
                   tooltipText.trim(),
-                  TextStyle(color: Colors.black, fontSize: 12),
+                  TextStyle(color: Colors.white, fontSize: 10),
                 );
               } else {
                 return null;
