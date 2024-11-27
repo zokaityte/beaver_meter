@@ -75,21 +75,27 @@ class _TrendsPageState extends State<TrendsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Cost Trends - $selectedYear'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.arrow_back),
-            onPressed: () {
-              changeYear(selectedYear - 1); // Go to the previous year
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.arrow_forward),
-            onPressed: () {
-              changeYear(selectedYear + 1); // Go to the next year
-            },
-          ),
-        ],
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(
+              icon: Icon(Icons.arrow_back),
+              onPressed: () {
+                changeYear(selectedYear - 1); // Go to the previous year
+              },
+            ),
+            Text(
+              '$selectedYear',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            IconButton(
+              icon: Icon(Icons.arrow_forward),
+              onPressed: () {
+                changeYear(selectedYear + 1); // Go to the next year
+              },
+            ),
+          ],
+        ),
       ),
       body: FutureBuilder<Map<String, List<Map<String, dynamic>>>>(
         future: graphDataFuture,
@@ -321,24 +327,5 @@ class _TrendsPageState extends State<TrendsPage> {
   /// Utility function to round up to the nearest interval
   double getRoundedMax(double maxValue, double interval) {
     return ((maxValue / interval).ceil() * interval).toDouble();
-  }
-
-  /// Helper function to get abbreviated month name
-  String _getMonthName(int month) {
-    const monthNames = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ];
-    return month > 0 && month <= 12 ? monthNames[month - 1] : 'Unknown';
   }
 }
