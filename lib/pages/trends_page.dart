@@ -67,11 +67,9 @@ class _TrendsPageState extends State<TrendsPage> {
   LineChartData buildLineChart(
       Map<String, List<Map<String, dynamic>>> graphData) {
     List<LineChartBarData> lines = [];
-    int index = 0;
 
-    // Build a line for each meter
     graphData.forEach((meterName, data) {
-      final color = meterColorsMap[data.first['meter_color']];
+      final color = meterColorsMap[data.first['color']] ?? Colors.grey;
 
       List<FlSpot> spots = data.asMap().entries.map((entry) {
         final monthIndex = entry.key.toDouble();
@@ -85,8 +83,8 @@ class _TrendsPageState extends State<TrendsPage> {
         color: color,
         barWidth: 4,
         belowBarData: BarAreaData(show: false),
+        dotData: FlDotData(show: true),
       ));
-      index++;
     });
 
     return LineChartData(
@@ -111,18 +109,82 @@ class _TrendsPageState extends State<TrendsPage> {
             getTitlesWidget: (value, meta) {
               int intValue = value.toInt();
               if (intValue >= 0 && intValue < graphData.values.first.length) {
-                return Text(
-                  graphData.values.first[intValue]['month'].toString(),
-                  style: const TextStyle(fontSize: 10),
-                );
+                final rawMonth = graphData.values.first[intValue]
+                    ['month']; // E.g., "2024-01"
+                try {
+                  final date = DateTime.parse('$rawMonth-01'); // Safely parse
+                  final formattedMonth =
+                      '${_getMonthName(date.month)}\n${date.year}'; // Format as "Month\nYear"
+                  return Text(
+                    formattedMonth,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 10),
+                  );
+                } catch (e) {
+                  return const Text('Invalid Date',
+                      style: TextStyle(fontSize: 8, color: Colors.red));
+                }
               }
               return const Text('');
             },
           ),
         ),
+        rightTitles: AxisTitles(
+          sideTitles: SideTitles(showTitles: false),
+        ),
+        topTitles: AxisTitles(
+          sideTitles: SideTitles(showTitles: false),
+        ),
       ),
       borderData: FlBorderData(show: true),
       gridData: FlGridData(show: true),
+      lineTouchData: LineTouchData(
+        enabled: true,
+        touchTooltipData: LineTouchTooltipData(
+          getTooltipItems: (touchedSpots) {
+            return touchedSpots
+                .map((spot) {
+                  final meterName = graphData.keys.elementAt(spot.barIndex);
+                  final data = graphData[meterName];
+                  if (data == null || spot.x.toInt() >= data.length) {
+                    return null;
+                  }
+                  final dataPoint = data[spot.x.toInt()];
+                  // Fixing the String to int conversion issue
+                  final monthParts = dataPoint['month'].split('-');
+                  final year = monthParts[0];
+                  final month = int.tryParse(monthParts[1]) ??
+                      1; // Default to Jan if invalid
+
+                  return LineTooltipItem(
+                    '${_getMonthName(month)} $year\nMeter: $meterName\nCost: ${dataPoint['cost']}',
+                    const TextStyle(color: Colors.black, fontSize: 12),
+                  );
+                })
+                .whereType<LineTooltipItem>()
+                .toList();
+          },
+        ),
+      ),
     );
+  }
+
+  /// Helper function to get abbreviated month name
+  String _getMonthName(int month) {
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    return month > 0 && month <= 12 ? monthNames[month - 1] : 'Unknown';
   }
 }
