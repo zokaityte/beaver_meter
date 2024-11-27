@@ -1,3 +1,6 @@
+import 'package:beaver_meter/constants/config.dart';
+import 'package:beaver_meter/database_helper.dart';
+import 'package:beaver_meter/models/meter.dart';
 import 'package:flutter/material.dart';
 
 class CreateMeterPage extends StatefulWidget {
@@ -8,16 +11,8 @@ class CreateMeterPage extends StatefulWidget {
 class _CreateMeterPageState extends State<CreateMeterPage> {
   final TextEditingController nameController = TextEditingController();
 
-  // List of predefined units
-  final List<String> units = ['kWh', 'm³', 'liters', 'gallons'];
   String? selectedUnit;
-
-  // List of colors
-  final List<Color> colors = [Colors.red, Colors.green, Colors.blue, Colors.orange];
-  Color? selectedColor;
-
-  // List of icons
-  final List<IconData> icons = [Icons.electric_bolt, Icons.water, Icons.fireplace, Icons.bolt];
+  int? selectedColorId; // Updated to store the color ID
   IconData? selectedIcon;
 
   @override
@@ -33,7 +28,6 @@ class _CreateMeterPageState extends State<CreateMeterPage> {
               decoration: InputDecoration(labelText: 'Meter Name'),
             ),
             SizedBox(height: 20),
-            // Dropdown for selecting units
             DropdownButtonFormField<String>(
               decoration: InputDecoration(labelText: 'Units'),
               value: selectedUnit,
@@ -50,32 +44,35 @@ class _CreateMeterPageState extends State<CreateMeterPage> {
               },
             ),
             SizedBox(height: 20),
-            // Dropdown for selecting color
-            DropdownButtonFormField<Color>(
+            DropdownButtonFormField<int>(
               decoration: InputDecoration(labelText: 'Color'),
-              value: selectedColor,
-              items: colors.map((Color color) {
-                return DropdownMenuItem<Color>(
-                  value: color,
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    color: color,
+              value: selectedColorId,
+              items: meterColorsMap.entries.map((entry) {
+                return DropdownMenuItem<int>(
+                  value: entry.key,
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        color: entry.value,
+                      ),
+                      SizedBox(width: 8),
+                    ],
                   ),
                 );
               }).toList(),
-              onChanged: (Color? newColor) {
+              onChanged: (int? newColorId) {
                 setState(() {
-                  selectedColor = newColor;
+                  selectedColorId = newColorId;
                 });
               },
             ),
             SizedBox(height: 20),
-            // Dropdown for selecting icon
             DropdownButtonFormField<IconData>(
               decoration: InputDecoration(labelText: 'Icon'),
               value: selectedIcon,
-              items: icons.map((IconData icon) {
+              items: meterIcons.map((IconData icon) {
                 return DropdownMenuItem<IconData>(
                   value: icon,
                   child: Icon(icon),
@@ -89,19 +86,41 @@ class _CreateMeterPageState extends State<CreateMeterPage> {
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                // Save the meter data here
-                final meterData = {
-                  'name': nameController.text,
-                  'unit': selectedUnit,
-                  'color': selectedColor,
-                  'icon': selectedIcon,
-                };
+              onPressed: () async {
+                String meterName = nameController.text;
 
-                // Log or save meterData
-                print(meterData);
+                if ([meterName, selectedUnit, selectedColorId, selectedIcon]
+                        .contains(null) ||
+                    meterName.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('All fields must be filled.')),
+                  );
+                  return;
+                }
 
-                Navigator.pop(context);
+                bool nameExists =
+                    await DatabaseHelper().meterNameExists(meterName);
+
+                if (nameExists) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                        content: Text(
+                            'Meter with that name already exists. Please choose a different name.')),
+                  );
+                } else {
+                  // Create Meter object
+                  final meter = Meter(
+                    name: meterName,
+                    unit: selectedUnit!,
+                    color: selectedColorId!, // Store color id
+                    icon: selectedIcon!.codePoint,
+                  );
+
+                  // Insert Meter into the database
+                  await DatabaseHelper().insertMeter(meter);
+
+                  Navigator.pop(context);
+                }
               },
               child: Text('Save'),
             ),

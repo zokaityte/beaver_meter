@@ -1,23 +1,60 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'create_price_page.dart'; // To create a new price
-import 'edit_price_page.dart';   // To edit an existing price
+import 'edit_price_page.dart'; // To edit an existing price
+import '../models/price.dart'; // Import Price model
+import '../models/meter.dart'; // Import Meter model
+import '../providers/settings_provider.dart';
+import 'package:beaver_meter/database_helper.dart';
 
-class PricesPage extends StatelessWidget {
-  final Map<String, dynamic> meter;
+class PricesPage extends StatefulWidget {
+  final Meter meter;
 
   PricesPage({required this.meter});
 
-  // Dummy data for prices associated with the meter
-  final List<Map<String, dynamic>> prices = [
-    {'pricePerUnit': '0.12', 'basePrice': '5.00', 'validFrom': 'Jan 2023', 'validTo': 'Dec 2023'},
-    {'pricePerUnit': '0.10', 'basePrice': '4.50', 'validFrom': 'Jan 2022', 'validTo': 'Dec 2022'},
-  ];
+  @override
+  _PricesPageState createState() => _PricesPageState();
+}
+
+class _PricesPageState extends State<PricesPage> {
+  List<Price> prices = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  // Load prices for the given meter
+  Future<void> _loadData() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    final fetchedPrices =
+        await DatabaseHelper().getPricesByMeterIdAsObjects(widget.meter.id!);
+
+    setState(() {
+      prices = fetchedPrices;
+      isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final currencySymbol = context.watch<SettingsProvider>().currencySymbol;
+
+    if (isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: Text('Prices for ${widget.meter.name}')),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Prices for ${meter['name']}'),
+        title: Text('Prices for ${widget.meter.name}'),
       ),
       body: Column(
         children: [
@@ -27,18 +64,25 @@ class PricesPage extends StatelessWidget {
               itemBuilder: (context, index) {
                 final price = prices[index];
                 return Card(
-                  margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16), // Adjust spacing
+                  margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                   child: ListTile(
-                    title: Text('Price: \$${price['pricePerUnit']} per unit'),
-                    subtitle: Text('Base Price: \$${price['basePrice']}\nValid from: ${price['validFrom']} to ${price['validTo']}'),
-                    onTap: () {
-                      // Navigate to the Edit Price Page
-                      Navigator.push(
+                    title: Text(
+                        'Price: $currencySymbol${price.pricePerUnit} per ${widget.meter.unit}'),
+                    subtitle: Text(
+                      'Base Price: $currencySymbol${price.basePrice}\nValid from: ${price.validFrom} to ${price.validTo}',
+                    ),
+                    onTap: () async {
+                      // Navigate to the Edit Price Page and refresh upon returning
+                      await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => EditPricePage(price: price),
+                          builder: (context) => EditPricePage(
+                            price: price,
+                            unit: widget.meter.unit,
+                          ),
                         ),
                       );
+                      _loadData(); // Refresh prices after returning
                     },
                   ),
                 );
@@ -48,19 +92,24 @@ class PricesPage extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Card(
-              color: Colors.blue, // Customize the card color
+              color: Colors.blue,
               child: ListTile(
-                leading: Icon(Icons.add, color: Colors.white), // Add an icon
+                leading: Icon(Icons.add, color: Colors.white),
                 title: Text(
                   'Add Price',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold),
                 ),
-                onTap: () {
-                  // Navigate to the Create Price Page
-                  Navigator.push(
+                onTap: () async {
+                  // Navigate to the Create Price Page and refresh when returning
+                  await Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => CreatePricePage()),
+                    MaterialPageRoute(
+                      builder: (context) => CreatePricePage(
+                          meterId: widget.meter.id!, unit: widget.meter.unit),
+                    ),
                   );
+                  _loadData(); // Refresh prices
                 },
               ),
             ),

@@ -1,0 +1,134 @@
+{
+  "meters": [
+    {
+      "id": 1,
+      "name": "Gas",
+      "unit": "m³",
+      "color": 1,
+      "icon": 984988
+    },
+    {
+      "id": 2,
+      "name": "Electricity",
+      "unit": "kWh",
+      "color": 2,
+      "icon": 984988
+    },
+    {
+      "id": 3,
+      "name": "Water",
+      "unit": "m³",
+      "color": 3,
+      "icon": 984988
+    }
+  ],
+  "prices": [
+    {
+      "meter_id": 1,
+      "price_per_unit": 0.87,
+      "base_price": 3.99,
+      "valid_from": "2023-01-01",
+      "valid_to": "2023-12-30"
+    },
+    {
+      "meter_id": 1,
+      "price_per_unit": 0.83,
+      "base_price": 3.99,
+      "valid_from": "2024-01-01",
+      "valid_to": "2024-06-30"
+    },
+    {
+      "meter_id": 1,
+      "price_per_unit": 0.59,
+      "base_price": 3.99,
+      "valid_from": "2024-07-01",
+      "valid_to": "2024-12-31"
+    },
+    {
+      "meter_id": 2,
+      "price_per_unit": 0.20,
+      "base_price": 3.00,
+      "valid_from": "2023-01-01",
+      "valid_to": "2023-12-31"
+    },
+    {
+      "meter_id": 2,
+      "price_per_unit": 0.22,
+      "base_price": 3.00,
+      "valid_from": "2024-01-01",
+      "valid_to": "2024-06-30"
+    },
+    {
+      "meter_id": 2,
+      "price_per_unit": 0.19,
+      "base_price": 3.00,
+      "valid_from": "2024-07-01",
+      "valid_to": "2024-12-31"
+    },
+    {
+      "meter_id": 3,
+      "price_per_unit": 2.48,
+      "base_price": 1.46,
+      "valid_from": "2023-07-01",
+      "valid_to": "2023-12-31"
+    },
+    {
+      "meter_id": 3,
+      "price_per_unit": 2.50,
+      "base_price": 1.46,
+      "valid_from": "2024-01-01",
+      "valid_to": "2024-06-30"
+    },
+    {
+      "meter_id": 3,
+      "price_per_unit": 2.03,
+      "base_price": 1.46,
+      "valid_from": "2024-07-01",
+      "valid_to": "2024-10-31"
+    }
+  ],
+  "readings": [
+
+    { "meter_id": 1, "value": 5088, "date": "2023-10-31" },
+    { "meter_id": 1, "value": 5167, "date": "2023-11-30" },
+    { "meter_id": 1, "value": 5350, "date": "2023-12-31" },
+    { "meter_id": 1, "value": 5500, "date": "2024-01-31" },
+    { "meter_id": 1, "value": 5716, "date": "2024-02-29" },
+    { "meter_id": 1, "value": 5906, "date": "2024-03-31" },
+    { "meter_id": 1, "value": 6057, "date": "2024-04-30" },
+    { "meter_id": 1, "value": 6137, "date": "2024-05-31" },
+    { "meter_id": 1, "value": 6161, "date": "2024-06-30" },
+    { "meter_id": 1, "value": 6174, "date": "2024-07-31" },
+    { "meter_id": 1, "value": 6184, "date": "2024-08-31" },
+    { "meter_id": 1, "value": 6199, "date": "2024-09-30" },
+    { "meter_id": 1, "value": 6301, "date": "2024-10-31" },
+
+    { "meter_id": 2, "value": 29024, "date": "2023-10-31" },
+    { "meter_id": 2, "value": 29294, "date": "2023-11-30" },
+    { "meter_id": 2, "value": 29457, "date": "2023-12-31" },
+    { "meter_id": 2, "value": 29579, "date": "2024-01-31" },
+    { "meter_id": 2, "value": 29718, "date": "2024-02-29" },
+    { "meter_id": 2, "value": 29937, "date": "2024-03-31" },
+    { "meter_id": 2, "value": 30073, "date": "2024-04-30" },
+    { "meter_id": 2, "value": 30183, "date": "2024-05-31" },
+    { "meter_id": 2, "value": 30299, "date": "2024-06-30" },
+    { "meter_id": 2, "value": 30417, "date": "2024-07-31" },
+    { "meter_id": 2, "value": 30506, "date": "2024-08-31" },
+    { "meter_id": 2, "value": 30617, "date": "2024-09-30" },
+    { "meter_id": 2, "value": 30838, "date": "2024-10-31" },
+
+    { "meter_id": 3, "value": 767, "date": "2023-10-31" },
+    { "meter_id": 3, "value": 779, "date": "2023-11-30" },
+    { "meter_id": 3, "value": 786, "date": "2023-12-31" },
+    { "meter_id": 3, "value": 796, "date": "2024-01-31" },
+    { "meter_id": 3, "value": 810, "date": "2024-02-29" },
+    { "meter_id": 3, "value": 821, "date": "2024-03-31" },
+    { "meter_id": 3, "value": 829, "date": "2024-04-30" },
+    { "meter_id": 3, "value": 836, "date": "2024-05-31" },
+    { "meter_id": 3, "value": 844, "date": "2024-06-30" },
+    { "meter_id": 3, "value": 850, "date": "2024-07-31" },
+    { "meter_id": 3, "value": 853, "date": "2024-08-31" },
+    { "meter_id": 3, "value": 858, "date": "2024-09-30" },
+    { "meter_id": 3, "value": 871, "date": "2024-10-31" }
+  ]
+}
