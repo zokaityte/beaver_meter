@@ -57,10 +57,52 @@ class _TrendsPageState extends State<TrendsPage> {
           final graphData = snapshot.data!;
           return Padding(
             padding: const EdgeInsets.all(16.0),
-            child: LineChart(buildLineChart(graphData)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                buildLegend(graphData), // Add the legend above the chart
+                SizedBox(height: 16), // Spacing between legend and chart
+                Center(
+                  child: AspectRatio(
+                    aspectRatio: 1, // Make the chart square
+                    child: LineChart(buildLineChart(graphData)),
+                  ),
+                ),
+              ],
+            ),
           );
         },
       ),
+    );
+  }
+
+  /// Build a custom legend widget
+  Widget buildLegend(Map<String, List<Map<String, dynamic>>> graphData) {
+    return Wrap(
+      spacing: 16,
+      runSpacing: 8,
+      children: graphData.keys.map((meterName) {
+        final color =
+            meterColorsMap[graphData[meterName]!.first['color']] ?? Colors.grey;
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+              ),
+            ),
+            SizedBox(width: 4),
+            Text(
+              meterName,
+              style: TextStyle(fontSize: 12),
+            ),
+          ],
+        );
+      }).toList(),
     );
   }
 
@@ -87,17 +129,30 @@ class _TrendsPageState extends State<TrendsPage> {
       ));
     });
 
+    // Calculate X and Y-axis ranges
+    double maxValue = graphData.values
+        .expand((data) => data)
+        .map((e) => (e['cost'] as num).toDouble())
+        .reduce((a, b) => a > b ? a : b);
+    double roundedMax = getRoundedMax(maxValue, 40);
+
+    double maxX = graphData.values.first.length - 0.5;
+
     return LineChartData(
+      minY: 0,
+      maxY: roundedMax,
+      maxX: maxX,
       lineBarsData: lines,
       titlesData: FlTitlesData(
         leftTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
             reservedSize: 40,
+            interval: 40,
             getTitlesWidget: (value, meta) {
               return Text(
-                value.toInt().toString(),
-                style: const TextStyle(fontSize: 10),
+                '\$${value.toInt()}',
+                style: TextStyle(fontSize: 10),
               );
             },
           ),
@@ -107,25 +162,30 @@ class _TrendsPageState extends State<TrendsPage> {
             showTitles: true,
             reservedSize: 40,
             getTitlesWidget: (value, meta) {
-              int intValue = value.toInt();
-              if (intValue >= 0 && intValue < graphData.values.first.length) {
-                final rawMonth = graphData.values.first[intValue]
-                    ['month']; // E.g., "2024-01"
+              int totalMonths = graphData.values.first.length;
+              int tickInterval = (totalMonths / 6).ceil();
+
+              if (value.toInt() % tickInterval == 0 &&
+                  value.toInt() >= 0 &&
+                  value.toInt() < totalMonths) {
+                final rawMonth = graphData.values.first[value.toInt()]['month'];
                 try {
-                  final date = DateTime.parse('$rawMonth-01'); // Safely parse
+                  final date = DateTime.parse('$rawMonth-01');
                   final formattedMonth =
-                      '${_getMonthName(date.month)}\n${date.year}'; // Format as "Month\nYear"
+                      '${_getMonthName(date.month)}\n${date.year}';
                   return Text(
                     formattedMonth,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 10),
+                    style: TextStyle(fontSize: 10),
                   );
                 } catch (e) {
-                  return const Text('Invalid Date',
-                      style: TextStyle(fontSize: 8, color: Colors.red));
+                  return Text(
+                    'Invalid Date',
+                    style: TextStyle(fontSize: 8, color: Colors.red),
+                  );
                 }
               }
-              return const Text('');
+              return Text('');
             },
           ),
         ),
@@ -133,40 +193,72 @@ class _TrendsPageState extends State<TrendsPage> {
           sideTitles: SideTitles(showTitles: false),
         ),
         topTitles: AxisTitles(
-          sideTitles: SideTitles(showTitles: false),
+          sideTitles: SideTitles(
+            showTitles: true,
+            reservedSize: 30,
+            getTitlesWidget: (value, meta) {
+              if (value == meta.max) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    'Cost',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
         ),
       ),
-      borderData: FlBorderData(show: true),
+      borderData: FlBorderData(show: false),
       gridData: FlGridData(show: true),
       lineTouchData: LineTouchData(
         enabled: true,
         touchTooltipData: LineTouchTooltipData(
+          fitInsideHorizontally: true,
+          fitInsideVertically: true,
+          tooltipRoundedRadius: 8,
           getTooltipItems: (touchedSpots) {
-            return touchedSpots
-                .map((spot) {
-                  final meterName = graphData.keys.elementAt(spot.barIndex);
-                  final data = graphData[meterName];
-                  if (data == null || spot.x.toInt() >= data.length) {
-                    return null;
-                  }
-                  final dataPoint = data[spot.x.toInt()];
-                  // Fixing the String to int conversion issue
-                  final monthParts = dataPoint['month'].split('-');
-                  final year = monthParts[0];
-                  final month = int.tryParse(monthParts[1]) ??
-                      1; // Default to Jan if invalid
+            return touchedSpots.map((touchedSpot) {
+              final monthIndex = touchedSpot.x.toInt();
+              final meterName = graphData.keys.elementAt(touchedSpot.barIndex);
+              final meterData = graphData[meterName]?[monthIndex];
+              final rawMonth = meterData?['month'];
 
-                  return LineTooltipItem(
-                    '${_getMonthName(month)} $year\nMeter: $meterName\nCost: ${dataPoint['cost']}',
-                    const TextStyle(color: Colors.black, fontSize: 12),
-                  );
-                })
-                .whereType<LineTooltipItem>()
-                .toList();
+              String tooltipText = '';
+
+              // Retrieve the month and year
+              if (rawMonth != null) {
+                try {
+                  final date = DateTime.parse('$rawMonth-01');
+                  tooltipText += '${_getMonthName(date.month)} ${date.year}\n';
+                } catch (e) {
+                  tooltipText += 'Invalid Date\n';
+                }
+              }
+
+              // Add meter-specific cost
+              final cost = (meterData?['cost'] ?? 0).toStringAsFixed(2);
+              tooltipText += '$meterName:  \$$cost';
+
+              return LineTooltipItem(
+                tooltipText.trim(),
+                TextStyle(color: Colors.black, fontSize: 12),
+              );
+            }).toList();
           },
         ),
       ),
     );
+  }
+
+  /// Utility function to round up to the nearest interval
+  double getRoundedMax(double maxValue, double interval) {
+    return ((maxValue / interval).ceil() * interval).toDouble();
   }
 
   /// Helper function to get abbreviated month name
