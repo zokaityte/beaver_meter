@@ -384,7 +384,7 @@ class _TrendsPageState extends State<TrendsPage> {
               if (entry.key == 0) {
                 return LineTooltipItem(
                   tooltipText.trim(),
-                  TextStyle(color: Colors.white, fontSize: 12),
+                  TextStyle(color: Colors.white),
                 );
               } else {
                 return null;
@@ -530,7 +530,6 @@ class _TrendsPageState extends State<TrendsPage> {
                 TextSpan(
                   text: '${rod.toY.toStringAsFixed(2)} $unit',
                   style: TextStyle(
-                    color: Colors.yellowAccent,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
