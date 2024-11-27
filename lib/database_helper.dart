@@ -133,6 +133,27 @@ class DatabaseHelper {
   ''', [year]);
   }
 
+  Future<List<Map<String, dynamic>>> getReadingsWithPreviousValues() async {
+    final db = await database;
+
+    final result = await db.rawQuery('''
+    SELECT
+        r.id AS reading_id,
+        r.value AS current_value,
+        r.date AS current_date,
+        m.id AS meter_id,
+        m.name AS meter_name,
+        m.unit AS meter_unit,
+        m.icon AS meter_icon,
+        LAG(r.value) OVER (PARTITION BY m.id ORDER BY r.date ASC) AS previous_value
+    FROM readings r
+    JOIN meters m ON r.meter_id = m.id
+    ORDER BY r.date DESC, m.id DESC; -- Sort by date DESC for display
+  ''');
+
+    return result;
+  }
+
   /// Populate the database using sample data from a JSON file
   Future<void> populateDatabaseFromJson(Database db) async {
     // Load the JSON data from assets
