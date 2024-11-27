@@ -1,10 +1,11 @@
+import 'package:beaver_meter/constants/config.dart'; // Import the color map
+import 'package:beaver_meter/models/meter.dart';
 import 'package:flutter/material.dart';
+
 import '../database_helper.dart';
+import 'create_reading_page.dart'; // Import the Create Reading Page
 import 'edit_meter_page.dart';
 import 'prices_page.dart'; // Import the Prices Page
-import 'create_reading_page.dart'; // Import the Create Reading Page
-import 'package:beaver_meter/models/meter.dart';
-import 'package:beaver_meter/constants/config.dart'; // Import the color map
 
 class MeterDetailPage extends StatefulWidget {
   final Meter meter;
@@ -38,10 +39,12 @@ class _MeterDetailPageState extends State<MeterDetailPage> {
   @override
   Widget build(BuildContext context) {
     final String meterName = meter.name;
-    final IconData meterIcon = IconData(meter.icon, fontFamily: 'MaterialIcons');
+    final IconData meterIcon =
+        IconData(meter.icon, fontFamily: 'MaterialIcons');
 
     // Fetch the color from the map using the color ID
-    final Color meterColor = meterColorsMap[meter.color] ?? const Color(0xFF000000);
+    final Color meterColor =
+        meterColorsMap[meter.color] ?? const Color(0xFF000000);
 
     return Scaffold(
       appBar: AppBar(
@@ -71,9 +74,12 @@ class _MeterDetailPageState extends State<MeterDetailPage> {
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         children: [
-                          Icon(Icons.electric_meter, color: Colors.blue, size: 40),
+                          Icon(Icons.electric_meter,
+                              color: Colors.blue, size: 40),
                           SizedBox(height: 10),
-                          Text('500 units', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          Text('500 units',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold)),
                           Text('Average Consumption'),
                         ],
                       ),
@@ -87,9 +93,12 @@ class _MeterDetailPageState extends State<MeterDetailPage> {
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         children: [
-                          Icon(Icons.attach_money, color: Colors.green, size: 40),
+                          Icon(Icons.attach_money,
+                              color: Colors.green, size: 40),
                           SizedBox(height: 10),
-                          Text('\$100', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          Text('\$100',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold)),
                           Text('Avg Price This Year'),
                         ],
                       ),
@@ -111,7 +120,8 @@ class _MeterDetailPageState extends State<MeterDetailPage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => PricesPage(meter: meter), // Pass meter ID
+                      builder: (context) =>
+                          PricesPage(meter: meter), // Pass meter ID
                     ),
                   );
                 },
@@ -127,7 +137,8 @@ class _MeterDetailPageState extends State<MeterDetailPage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => CreateReadingPage(meterId: meter.id!), // Pass meter ID
+                      builder: (context) => CreateReadingPage(
+                          meterId: meter.id!), // Pass meter ID
                     ),
                   );
                 },
@@ -142,7 +153,8 @@ class _MeterDetailPageState extends State<MeterDetailPage> {
                   bool? updated = await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => EditMeterPage(meter: meter), // Pass the Meter object
+                      builder: (context) =>
+                          EditMeterPage(meter: meter), // Pass the Meter object
                     ),
                   );
                   if (updated == true) {
