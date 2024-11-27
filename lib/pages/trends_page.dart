@@ -23,8 +23,8 @@ class _TrendsPageState extends State<TrendsPage> {
   }
 
   Future<Map<String, List<Map<String, dynamic>>>> prepareGraphData() async {
-    final data =
-        await DatabaseHelper().getMonthlyUsageAndCost(selectedYear.toString());
+    final data = await DatabaseHelper()
+        .getMonthlyUsageAndCost(year: selectedYear.toString());
 
     // Initialize graphData with placeholders for all months
     Map<String, List<Map<String, dynamic>>> graphData = {};

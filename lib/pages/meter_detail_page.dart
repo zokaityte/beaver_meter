@@ -1,8 +1,10 @@
 import 'package:beaver_meter/constants/config.dart'; // Import the color map
 import 'package:beaver_meter/models/meter.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../database_helper.dart';
+import '../providers/settings_provider.dart';
 import 'create_reading_page.dart'; // Import the Create Reading Page
 import 'edit_meter_page.dart';
 import 'prices_page.dart'; // Import the Prices Page
@@ -18,11 +20,39 @@ class MeterDetailPage extends StatefulWidget {
 
 class _MeterDetailPageState extends State<MeterDetailPage> {
   late Meter meter;
+  int? lastMonthUsage;
+  double? lastMonthCost;
+  String? lastMonth; // To store the month as a string, e.g., "2024-10"
 
   @override
   void initState() {
     super.initState();
     meter = widget.meter;
+    _fetchLastMonthData();
+  }
+
+  Future<void> _fetchLastMonthData() async {
+    // Fetch data for the specific meter
+    final dataList =
+        await DatabaseHelper().getMonthlyUsageAndCost(meterId: meter.id);
+
+    if (dataList.isNotEmpty) {
+      // Directly get the first entry as the last data point
+      final data = dataList.last;
+
+      setState(() {
+        lastMonthUsage = data['monthly_usage'] as int;
+        lastMonthCost = data['total_cost'] as double;
+        lastMonth = data['month'] as String;
+      });
+    } else {
+      // No data available
+      setState(() {
+        lastMonthUsage = null;
+        lastMonthCost = null;
+        lastMonth = null;
+      });
+    }
   }
 
   Future<void> _reloadDetails() async {
@@ -38,9 +68,11 @@ class _MeterDetailPageState extends State<MeterDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final currencySymbol = context.watch<SettingsProvider>().currencySymbol;
     final String meterName = meter.name;
     final IconData meterIcon =
         IconData(meter.icon, fontFamily: 'MaterialIcons');
+    final String meterUnit = meter.unit;
 
     // Fetch the color from the map using the color ID
     final Color meterColor =
@@ -77,10 +109,18 @@ class _MeterDetailPageState extends State<MeterDetailPage> {
                           Icon(Icons.electric_meter,
                               color: Colors.blue, size: 40),
                           SizedBox(height: 10),
-                          Text('500 units',
-                              style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold)),
-                          Text('Average Consumption'),
+                          Text(
+                            lastMonthUsage != null
+                                ? '$lastMonthUsage $meterUnit'
+                                : 'N/A',
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            lastMonth != null
+                                ? 'Usage for $lastMonth'
+                                : 'Last Month Usage',
+                          ),
                         ],
                       ),
                     ),
@@ -93,13 +133,23 @@ class _MeterDetailPageState extends State<MeterDetailPage> {
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         children: [
-                          Icon(Icons.attach_money,
+                          Icon(Icons.credit_card,
                               color: Colors.green, size: 40),
                           SizedBox(height: 10),
-                          Text('\$100',
-                              style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold)),
-                          Text('Avg Price This Year'),
+                          Text(
+                            lastMonthCost != null
+                                ? '$currencySymbol ${lastMonthCost!.toStringAsFixed(2)}'
+                                : 'N/A',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            lastMonth != null
+                                ? 'Cost for $lastMonth'
+                                : 'Last Month Cost',
+                          ),
                         ],
                       ),
                     ),

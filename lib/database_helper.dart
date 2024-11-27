@@ -89,8 +89,27 @@ class DatabaseHelper {
     await populateDatabaseFromJson(db);
   }
 
-  Future<List<Map<String, dynamic>>> getMonthlyUsageAndCost(String year) async {
+  Future<List<Map<String, dynamic>>> getMonthlyUsageAndCost(
+      {String? year, int? meterId}) async {
     final db = await database;
+
+    // Build dynamic WHERE clause based on optional parameters
+    final conditions = [];
+    final params = [];
+
+    if (year != null) {
+      conditions.add("strftime('%Y', lr.month || '-01') = ?");
+      params.add(year);
+    }
+
+    if (meterId != null) {
+      conditions.add("m.id = ?");
+      params.add(meterId);
+    }
+
+    final whereClause =
+        conditions.isNotEmpty ? "WHERE ${conditions.join(' AND ')}" : "";
+
     return await db.rawQuery('''
   WITH MonthlyReadings AS (
       SELECT
@@ -128,10 +147,10 @@ class DatabaseHelper {
       LastReadings lr
   JOIN meters m ON m.id = lr.meter_id
   JOIN prices p ON m.id = p.meter_id AND lr.month || '-01' BETWEEN p.valid_from AND p.valid_to
-  WHERE strftime('%Y', lr.month || '-01') = ?
+  $whereClause
   ORDER BY
       m.id, lr.month;
-  ''', [year]);
+  ''', params);
   }
 
   Future<List<Map<String, dynamic>>> getReadingsWithPreviousValues() async {
