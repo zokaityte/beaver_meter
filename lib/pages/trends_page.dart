@@ -167,53 +167,58 @@ class _TrendsPageState extends State<TrendsPage> {
     graphData.forEach((meterName, data) {
       final color = meterColorsMap[data.first['color']] ?? Colors.grey;
 
-      // Create spots only for months with non-null costs
-      List<FlSpot> spots = data
-          .asMap()
-          .entries
-          .where((entry) =>
-              entry.value['cost'] != null) // Skip months with null cost
-          .map((entry) {
+      // Create spots for all months, including gaps for null or 0 costs
+      List<FlSpot?> spots = data.asMap().entries.map((entry) {
         final monthIndex = entry.key.toDouble(); // Index from 0 to 11 (Jan-Dec)
-        final cost = (entry.value['cost'] as num).toDouble();
-        return FlSpot(monthIndex, cost);
+        final cost = entry.value['cost'] != null
+            ? (entry.value['cost'] as num).toDouble()
+            : null; // Use null for missing values
+        return (cost != null && cost != 0) ? FlSpot(monthIndex, cost) : null;
       }).toList();
 
-      lines.add(LineChartBarData(
-        spots: spots,
-        isCurved: true,
-        color: color,
-        barWidth: 4,
-        belowBarData: BarAreaData(show: false),
-        dotData: FlDotData(show: true),
-      ));
+      // Split spots into segments of consecutive valid (non-null, non-zero) spots
+      List<List<FlSpot>> spotSegments = [];
+      List<FlSpot> currentSegment = [];
+
+      for (var spot in spots) {
+        if (spot != null) {
+          currentSegment.add(spot);
+        } else {
+          if (currentSegment.isNotEmpty) {
+            spotSegments.add(currentSegment);
+            currentSegment = [];
+          }
+        }
+      }
+      if (currentSegment.isNotEmpty) {
+        spotSegments.add(currentSegment);
+      }
+
+      // Create a LineChartBarData for each segment
+      for (var segment in spotSegments) {
+        lines.add(LineChartBarData(
+          spots: segment,
+          isCurved: true,
+          color: color,
+          barWidth: 4,
+          belowBarData: BarAreaData(show: false),
+          dotData: FlDotData(show: true), // Show dots for valid points
+        ));
+      }
     });
 
-    // Set the X-axis range to cover Jan (0) to Dec (11)
     return LineChartData(
-      minY: 0,
-      maxX: 11, // Ensure X-axis covers all 12 months (Jan = 0, Dec = 11)
+      minX: 0,
+      maxX: 11, // Ensure X-axis covers all months from Jan to Dec
+      minY: 0, // Adjust according to your data range
       lineBarsData: lines,
       titlesData: FlTitlesData(
-        leftTitles: AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: true,
-            reservedSize: 40,
-            interval: 40,
-            getTitlesWidget: (value, meta) {
-              return Text(
-                '\$${value.toInt()}',
-                style: TextStyle(fontSize: 10),
-              );
-            },
-          ),
-        ),
         bottomTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
             reservedSize: 40,
+            interval: 1,
             getTitlesWidget: (value, meta) {
-              // Map X-axis value (0-11) to month names
               const months = [
                 'Jan',
                 'Feb',
@@ -228,14 +233,29 @@ class _TrendsPageState extends State<TrendsPage> {
                 'Nov',
                 'Dec'
               ];
-              if (value.toInt() >= 0 && value.toInt() < 12) {
-                return Text(
-                  months[value.toInt()],
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 10),
+              if (value.toInt() >= 0 && value.toInt() < months.length) {
+                return SideTitleWidget(
+                  axisSide: meta.axisSide,
+                  child: Text(
+                    months[value.toInt()],
+                    style: TextStyle(fontSize: 10),
+                  ),
                 );
               }
-              return Text('');
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+        leftTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            reservedSize: 40,
+            interval: 40,
+            getTitlesWidget: (value, meta) {
+              return Text(
+                '\$${value.toInt()}',
+                style: TextStyle(fontSize: 10),
+              );
             },
           ),
         ),
@@ -243,26 +263,11 @@ class _TrendsPageState extends State<TrendsPage> {
           sideTitles: SideTitles(showTitles: false),
         ),
         topTitles: AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: true,
-            reservedSize: 30,
-            getTitlesWidget: (value, meta) {
-              if (value == meta.max) {
-                return Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Text(
-                      'Cost',
-                      style:
-                          TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                    ));
-              }
-              return const SizedBox.shrink();
-            },
-          ),
+          sideTitles: SideTitles(showTitles: false),
         ),
       ),
-      borderData: FlBorderData(show: false),
       gridData: FlGridData(show: true),
+      borderData: FlBorderData(show: false),
       lineTouchData: LineTouchData(
         enabled: true,
         touchTooltipData: LineTouchTooltipData(
