@@ -114,8 +114,17 @@ class _TrendsPageState extends State<TrendsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Add title for the graph
+                Text(
+                  'Cost',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8), // Spacing between title and legend
                 buildLegend(graphData),
-                SizedBox(height: 16),
+                SizedBox(height: 16), // Spacing between legend and chart
                 Center(
                   child: AspectRatio(
                     aspectRatio: 1,
@@ -162,6 +171,9 @@ class _TrendsPageState extends State<TrendsPage> {
 
   LineChartData buildLineChart(
       Map<String, List<Map<String, dynamic>>> graphData) {
+    final double interval = 40.0;
+    final double maxY = getRoundedMax(graphData, interval);
+
     List<LineChartBarData> lines = [];
 
     graphData.forEach((meterName, data) {
@@ -210,7 +222,8 @@ class _TrendsPageState extends State<TrendsPage> {
     return LineChartData(
       minX: 0,
       maxX: 11, // Ensure X-axis covers all months from Jan to Dec
-      minY: 0, // Adjust according to your data range
+      minY: 0,
+      maxY: maxY, // Use dynamically rounded maxY
       lineBarsData: lines,
       titlesData: FlTitlesData(
         bottomTitles: AxisTitles(
@@ -250,7 +263,7 @@ class _TrendsPageState extends State<TrendsPage> {
           sideTitles: SideTitles(
             showTitles: true,
             reservedSize: 40,
-            interval: 40,
+            interval: interval, // Ensure grid aligns with Y-axis ticks
             getTitlesWidget: (value, meta) {
               return Text(
                 '\$${value.toInt()}',
@@ -266,7 +279,10 @@ class _TrendsPageState extends State<TrendsPage> {
           sideTitles: SideTitles(showTitles: false),
         ),
       ),
-      gridData: FlGridData(show: true),
+      gridData: FlGridData(
+        show: true,
+        horizontalInterval: interval, // Align grid with Y-axis ticks
+      ),
       borderData: FlBorderData(show: false),
       lineTouchData: LineTouchData(
         enabled: true,
@@ -330,7 +346,20 @@ class _TrendsPageState extends State<TrendsPage> {
   }
 
   /// Utility function to round up to the nearest interval
-  double getRoundedMax(double maxValue, double interval) {
-    return ((maxValue / interval).ceil() * interval).toDouble();
+  double getRoundedMax(
+      Map<String, List<Map<String, dynamic>>> graphData, double interval) {
+    double maxY = 0.0;
+
+    graphData.forEach((_, data) {
+      for (var entry in data) {
+        final cost = entry['cost'];
+        if (cost != null && cost > maxY) {
+          maxY = cost.toDouble();
+        }
+      }
+    });
+
+    return ((maxY / interval).ceil() * interval)
+        .toDouble(); // Round to the nearest interval
   }
 }
