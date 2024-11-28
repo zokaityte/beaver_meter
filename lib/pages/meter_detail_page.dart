@@ -166,14 +166,15 @@ class _MeterDetailPageState extends State<MeterDetailPage> {
                 leading: Icon(Icons.money, color: Colors.orange),
                 title: Text('Prices'),
                 trailing: Icon(Icons.arrow_forward_ios),
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) =>
                           PricesPage(meter: meter), // Pass meter ID
                     ),
                   );
+                  await _fetchLastMonthData();
                 },
               ),
             ),
