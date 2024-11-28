@@ -182,15 +182,16 @@ class _MeterDetailPageState extends State<MeterDetailPage> {
               child: ListTile(
                 leading: Icon(Icons.add, color: Colors.blue),
                 title: Text('Add Reading'),
-                onTap: () {
+                onTap: () async {
                   // Navigate to CreateReadingPage
-                  Navigator.push(
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => CreateReadingPage(
                           meterId: meter.id!), // Pass meter ID
                     ),
                   );
+                  await _fetchLastMonthData();
                 },
               ),
             ),
