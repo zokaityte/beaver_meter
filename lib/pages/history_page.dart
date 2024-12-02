@@ -179,7 +179,7 @@ class _HistoryPageState extends State<HistoryPage> {
                                 ),
                               ),
                             );
-                            _fetchReadingsWithMeterData(); // Refresh data
+                            await _fetchReadingsWithMeterData(); // Refresh data
                           },
                         ),
                       );

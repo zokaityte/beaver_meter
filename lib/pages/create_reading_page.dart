@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:beaver_meter/database_helper.dart';
 import 'package:beaver_meter/models/reading.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
 import '../validators/validator.dart';
 
@@ -48,7 +50,8 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
       final formattedDate = DateFormat('yyyy-MM-dd').format(pickedDate);
 
       // Validate if the selected date already exists for the meter
-      final dateError = await Validator.validateReadingDate(widget.meterId, formattedDate);
+      final dateError =
+          await Validator.validateReadingDate(widget.meterId, formattedDate);
 
       if (dateError != null) {
         // Show an error message if the date already exists
@@ -66,6 +69,78 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
     }
   }
 
+  Future<void> _scanReading() async {
+    final ImagePicker _picker = ImagePicker();
+
+    try {
+      // Capture image from camera
+      final XFile? image = await _picker.pickImage(source: ImageSource.camera);
+
+      if (image == null) {
+        // User canceled the image capture
+        return;
+      }
+
+      // Create an InputImage for ML Kit
+      final InputImage inputImage = InputImage.fromFilePath(image.path);
+
+      // Initialize the text recognizer
+      final TextRecognizer textRecognizer =
+          TextRecognizer(script: TextRecognitionScript.latin);
+
+      // Process the image to recognize text
+      final RecognizedText recognizedText =
+          await textRecognizer.processImage(inputImage);
+
+      // Extract numbers from the recognized text
+      String extractedText = recognizedText.text;
+      final RegExp numberRegExp = RegExp(r'\d+');
+      final match = numberRegExp.firstMatch(extractedText);
+
+      if (match != null) {
+        String numberString = match.group(0)!;
+
+        // Try parsing the numberString to an integer
+        int? readingValue = int.tryParse(numberString);
+
+        if (readingValue != null) {
+          // Update the reading value controller with the integer value
+          setState(() {
+            readingValueController.text = readingValue.toString();
+          });
+        } else {
+          // Parsing failed
+          setState(() {
+            readingValueController.text = '';
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('Failed to recognize text. Please try again.')),
+          );
+        }
+      } else {
+        // No numbers found in the text
+        setState(() {
+          readingValueController.text = '';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Failed to recognize text. Please try again.')),
+        );
+      }
+
+      // Remember to close the text recognizer
+      textRecognizer.close();
+    } catch (e) {
+      // Handle any errors during image processing
+      setState(() {
+        readingValueController.text = '';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to recognize text. Please try again.')),
+      );
+    }
+  }
 
   Future<void> _saveReading(BuildContext context) async {
     if (!_formKey.currentState!.validate()) {
@@ -77,7 +152,8 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
     final readingDate = readingDateController.text;
 
     // Perform cross-field validation
-    final crossFieldError = await Validator.validateReading(widget.meterId, readingValue, readingDate);
+    final crossFieldError = await Validator.validateReading(
+        widget.meterId, readingValue, readingDate);
     if (crossFieldError != null) {
       // Show a SnackBar with the cross-field validation error
       ScaffoldMessenger.of(context).showSnackBar(
@@ -107,7 +183,6 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -123,9 +198,7 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
                 decoration: InputDecoration(
                   labelText: 'Enter Reading Value',
                   suffixIcon: IconButton(
-                    onPressed: () {
-                      // Placeholder for OCR image selection
-                    },
+                    onPressed: _scanReading,
                     icon: Icon(Icons.camera_alt),
                   ),
                 ),
