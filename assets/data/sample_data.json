@@ -4,8 +4,8 @@
       "id": 1,
       "name": "Gas",
       "unit": "m³",
-      "color": 1,
-      "icon": 984988
+      "color": 4,
+      "icon": 57994
     },
     {
       "id": 2,
@@ -18,7 +18,7 @@
       "id": 3,
       "name": "Water",
       "unit": "m³",
-      "color": 3,
+      "color": 5,
       "icon": 984988
     }
   ],
@@ -84,7 +84,7 @@
       "price_per_unit": 2.03,
       "base_price": 1.46,
       "valid_from": "2024-07-01",
-      "valid_to": "2024-10-31"
+      "valid_to": "2024-12-31"
     }
   ],
   "readings": [
@@ -102,6 +102,7 @@
     { "meter_id": 1, "value": 6184, "date": "2024-08-31" },
     { "meter_id": 1, "value": 6199, "date": "2024-09-30" },
     { "meter_id": 1, "value": 6301, "date": "2024-10-31" },
+    { "meter_id": 1, "value": 6400, "date": "2024-11-30" },
 
     { "meter_id": 2, "value": 29024, "date": "2023-10-31" },
     { "meter_id": 2, "value": 29294, "date": "2023-11-30" },
@@ -116,6 +117,7 @@
     { "meter_id": 2, "value": 30506, "date": "2024-08-31" },
     { "meter_id": 2, "value": 30617, "date": "2024-09-30" },
     { "meter_id": 2, "value": 30838, "date": "2024-10-31" },
+    { "meter_id": 2, "value": 31002, "date": "2024-11-30" },
 
     { "meter_id": 3, "value": 767, "date": "2023-10-31" },
     { "meter_id": 3, "value": 779, "date": "2023-11-30" },
@@ -129,6 +131,7 @@
     { "meter_id": 3, "value": 850, "date": "2024-07-31" },
     { "meter_id": 3, "value": 853, "date": "2024-08-31" },
     { "meter_id": 3, "value": 858, "date": "2024-09-30" },
-    { "meter_id": 3, "value": 871, "date": "2024-10-31" }
+    { "meter_id": 3, "value": 871, "date": "2024-10-31" },
+    { "meter_id": 3, "value": 882, "date": "2024-11-30" }
   ]
 }
