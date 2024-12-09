@@ -39,9 +39,9 @@ class _CaptureWithBoundingBoxPageState
   Future<void>? _initializeControllerFuture;
   bool _isControllerInitialized = false;
 
-  // Bounding box width and height as class-level variables
-  double bboxWidth = 200.0;
-  double bboxHeight = 200.0;
+  // Bounding box width and height ratios
+  final double bboxWidthRatio = 0.75; // of screen width
+  final double bboxHeightRatio = 0.125; // of screen height
 
   @override
   void initState() {
@@ -98,6 +98,8 @@ class _CaptureWithBoundingBoxPageState
       final scaleY = originalImage.height / screenHeight;
 
       // Calculate bounding box position dynamically
+      final bboxWidth = screenWidth * bboxWidthRatio;
+      final bboxHeight = screenHeight * bboxHeightRatio;
       final centerX = screenWidth / 2;
       final centerY = screenHeight / 2;
 
@@ -149,9 +151,13 @@ class _CaptureWithBoundingBoxPageState
 
   @override
   Widget build(BuildContext context) {
-    // Calculate the bounding box dynamically in the build method
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
+
+    // Calculate bounding box dimensions using ratios
+    final bboxWidth = screenWidth * bboxWidthRatio;
+    final bboxHeight = screenHeight * bboxHeightRatio;
+
     final boundingBox = Rect.fromCenter(
       center: Offset(screenWidth / 2, screenHeight / 2),
       width: bboxWidth,
