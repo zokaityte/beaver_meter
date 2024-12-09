@@ -43,7 +43,8 @@ class _EditMeterPageState extends State<EditMeterPage> {
       );
 
       await db.updateMeter(updatedMeter.id!, updatedMeter.toMap());
-      Navigator.pop(context, true); // Return to the previous screen with success
+      Navigator.pop(
+          context, true); // Return to the previous screen with success
     }
   }
 
@@ -55,7 +56,8 @@ class _EditMeterPageState extends State<EditMeterPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Delete Meter'),
-        content: Text('Are you sure you want to delete this meter? All associated data will be lost.'),
+        content: Text(
+            'Are you sure you want to delete this meter? All associated data will be lost.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false), // Cancel
@@ -70,8 +72,10 @@ class _EditMeterPageState extends State<EditMeterPage> {
     );
 
     if (confirmDelete == true) {
-      await db.deleteMeter(widget.meter.id!); // Delete the meter and its associated data
-      Navigator.popUntil(context, (route) => route.isFirst); // Back to MetersPage
+      await db.deleteMeter(
+          widget.meter.id!); // Delete the meter and its associated data
+      Navigator.popUntil(
+          context, (route) => route.isFirst); // Back to MetersPage
     }
   }
 
@@ -161,7 +165,7 @@ class _EditMeterPageState extends State<EditMeterPage> {
                 },
               ),
               SizedBox(height: 20),
-              ElevatedButton(
+              FilledButton(
                 onPressed: _updateMeter,
                 child: Text('Update Meter'),
               ),

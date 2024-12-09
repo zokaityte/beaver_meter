@@ -92,7 +92,7 @@ class _PricesPageState extends State<PricesPage> {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Card(
-              color: Colors.blue,
+              color: Theme.of(context).primaryColor,
               child: ListTile(
                 leading: Icon(Icons.add, color: Colors.white),
                 title: Text(

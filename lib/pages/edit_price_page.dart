@@ -192,6 +192,7 @@ class _EditPricePageState extends State<EditPricePage> {
                   return null;
                 },
               ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: basePriceController,
                 decoration:
@@ -206,6 +207,7 @@ class _EditPricePageState extends State<EditPricePage> {
                   return null;
                 },
               ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: validFromController,
                 decoration: InputDecoration(
@@ -223,6 +225,7 @@ class _EditPricePageState extends State<EditPricePage> {
                   return null;
                 },
               ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: validToController,
                 decoration: InputDecoration(
@@ -248,8 +251,8 @@ class _EditPricePageState extends State<EditPricePage> {
                   return null;
                 },
               ),
-              const SizedBox(height: 20),
-              ElevatedButton(
+              const SizedBox(height: 24),
+              FilledButton(
                 onPressed: () => _savePrice(context),
                 child: const Text('Save Price'),
               ),

@@ -81,7 +81,7 @@ class _HistoryPageState extends State<HistoryPage> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(16.0),
             child: DropdownButtonFormField<Meter>(
               isExpanded: true,
               decoration: InputDecoration(

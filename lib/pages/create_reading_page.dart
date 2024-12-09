@@ -200,7 +200,7 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
                 },
               ),
               SizedBox(height: 20),
-              ElevatedButton(
+              FilledButton(
                 onPressed: () => _saveReading(context),
                 child: Text('Save Reading'),
               ),
