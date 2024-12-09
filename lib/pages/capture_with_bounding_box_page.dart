@@ -4,6 +4,29 @@ import 'package:camera/camera.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image/image.dart' as img;
 
+class BoundingBoxClipper extends CustomClipper<Path> {
+  final Rect boundingBox;
+
+  BoundingBoxClipper({required this.boundingBox});
+
+  @override
+  Path getClip(Size size) {
+    // Define the full screen as a path
+    final path = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    // Define the bounding box as a path and subtract it
+    path.addRect(boundingBox);
+    path.fillType =
+        PathFillType.evenOdd; // Keep everything outside the bounding box
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) {
+    return true; // Redraw if the bounding box changes
+  }
+}
+
 class CaptureWithBoundingBoxPage extends StatefulWidget {
   @override
   _CaptureWithBoundingBoxPageState createState() =>
@@ -136,6 +159,7 @@ class _CaptureWithBoundingBoxPageState
     );
 
     return Scaffold(
+      backgroundColor: Colors.black, // Black background
       body: _isControllerInitialized
           ? Stack(
               children: [
@@ -147,19 +171,19 @@ class _CaptureWithBoundingBoxPageState
                     child: CameraPreview(_cameraController),
                   ),
                 ),
-                // Bounding Box Overlay
-                Positioned.fromRect(
-                  rect: boundingBox,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.red, width: 2),
+                // Dimming Overlay with Clear Bounding Box
+                Positioned.fill(
+                  child: ClipPath(
+                    clipper: BoundingBoxClipper(boundingBox: boundingBox),
+                    child: Container(
+                      color: Colors.black.withOpacity(0.7),
                     ),
                   ),
                 ),
                 // Capture Button
                 Positioned(
                   bottom: 50,
-                  left: (MediaQuery.of(context).size.width / 2) - 50,
+                  left: (screenWidth / 2) - 50,
                   child: ElevatedButton(
                     onPressed: _captureImage,
                     child: Text('Capture'),
