@@ -11,19 +11,15 @@ class BoundingBoxClipper extends CustomClipper<Path> {
 
   @override
   Path getClip(Size size) {
-    // Define the full screen as a path
     final path = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
-
-    // Define the bounding box as a path and subtract it
     path.addRect(boundingBox);
-    path.fillType =
-        PathFillType.evenOdd; // Keep everything outside the bounding box
+    path.fillType = PathFillType.evenOdd;
     return path;
   }
 
   @override
   bool shouldReclip(covariant CustomClipper<Path> oldClipper) {
-    return true; // Redraw if the bounding box changes
+    return true;
   }
 }
 
@@ -38,10 +34,10 @@ class _CaptureWithBoundingBoxPageState
   late CameraController _cameraController;
   Future<void>? _initializeControllerFuture;
   bool _isControllerInitialized = false;
+  bool _isFlashOn = false; // Flash mode state
 
-  // Bounding box width and height ratios
-  final double bboxWidthRatio = 0.75; // of screen width
-  final double bboxHeightRatio = 0.125; // of screen height
+  final double bboxWidthRatio = 0.75; // 75% of screen width
+  final double bboxHeightRatio = 0.125; // 12.5% of screen height
 
   @override
   void initState() {
@@ -56,7 +52,6 @@ class _CaptureWithBoundingBoxPageState
           CameraController(cameras.first, ResolutionPreset.high);
       _initializeControllerFuture = _cameraController.initialize();
       await _initializeControllerFuture;
-      // Set the flash mode to off
       await _cameraController.setFlashMode(FlashMode.off);
       setState(() => _isControllerInitialized = true);
     } catch (e) {
@@ -65,12 +60,23 @@ class _CaptureWithBoundingBoxPageState
     }
   }
 
+  Future<void> _toggleFlash() async {
+    if (!_isControllerInitialized) return;
+    try {
+      setState(() {
+        _isFlashOn = !_isFlashOn;
+      });
+      await _cameraController
+          .setFlashMode(_isFlashOn ? FlashMode.torch : FlashMode.off);
+    } catch (e) {
+      debugPrint('Error toggling flash: $e');
+    }
+  }
+
   Future<void> _captureImage() async {
     if (!_isControllerInitialized) return;
     try {
       final image = await _cameraController.takePicture();
-
-      // Crop the captured image using the bounding box dimensions
       final croppedImage = await _cropImage(File(image.path));
       if (croppedImage != null) {
         final extractedText = await _processImage(croppedImage);
@@ -93,11 +99,9 @@ class _CaptureWithBoundingBoxPageState
       final screenWidth = MediaQuery.of(context).size.width;
       final screenHeight = MediaQuery.of(context).size.height;
 
-      // Scale to the captured image resolution
       final scaleX = originalImage.width / screenWidth;
       final scaleY = originalImage.height / screenHeight;
 
-      // Calculate bounding box position dynamically
       final bboxWidth = screenWidth * bboxWidthRatio;
       final bboxHeight = screenHeight * bboxHeightRatio;
       final centerX = screenWidth / 2;
@@ -118,7 +122,6 @@ class _CaptureWithBoundingBoxPageState
         height: croppedRect.height.toInt(),
       );
 
-      // Save the cropped image as a temporary file
       final tempDir = await Directory.systemTemp.createTemp('cropped_image');
       final croppedFile = File('${tempDir.path}/cropped_image.jpg')
         ..writeAsBytesSync(img.encodeJpg(cropped));
@@ -154,7 +157,6 @@ class _CaptureWithBoundingBoxPageState
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    // Calculate bounding box dimensions using ratios
     final bboxWidth = screenWidth * bboxWidthRatio;
     final bboxHeight = screenHeight * bboxHeightRatio;
 
@@ -165,11 +167,11 @@ class _CaptureWithBoundingBoxPageState
     );
 
     return Scaffold(
-      backgroundColor: Colors.black, // Black background
+      backgroundColor: Colors.black,
       body: _isControllerInitialized
           ? Stack(
+              alignment: Alignment.center,
               children: [
-                // Camera Preview that fits within the screen width
                 Center(
                   child: AspectRatio(
                     aspectRatio: _cameraController.value.previewSize!.height /
@@ -177,7 +179,6 @@ class _CaptureWithBoundingBoxPageState
                     child: CameraPreview(_cameraController),
                   ),
                 ),
-                // Dimming Overlay with Clear Bounding Box
                 Positioned.fill(
                   child: ClipPath(
                     clipper: BoundingBoxClipper(boundingBox: boundingBox),
@@ -186,13 +187,30 @@ class _CaptureWithBoundingBoxPageState
                     ),
                   ),
                 ),
-                // Capture Button
+                Positioned(
+                  top: 40,
+                  right: 20,
+                  child: IconButton(
+                    icon: Icon(
+                      _isFlashOn ? Icons.flash_on : Icons.flash_off,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                    onPressed: _toggleFlash,
+                  ),
+                ),
                 Positioned(
                   bottom: 50,
-                  left: (screenWidth / 2) - 50,
-                  child: ElevatedButton(
-                    onPressed: _captureImage,
-                    child: Text('Capture'),
+                  child: GestureDetector(
+                    onTap: _captureImage,
+                    child: Container(
+                      width: 70,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
                   ),
                 ),
               ],
