@@ -34,7 +34,7 @@ class _CaptureWithBoundingBoxPageState
   late CameraController _cameraController;
   Future<void>? _initializeControllerFuture;
   bool _isControllerInitialized = false;
-  bool _isFlashOn = false; // Flash mode state
+  bool _isFlashOn = false;
 
   final double bboxWidthRatio = 0.75; // 75% of screen width
   final double bboxHeightRatio = 0.125; // 12.5% of screen height
@@ -113,7 +113,6 @@ class _CaptureWithBoundingBoxPageState
         height: bboxHeight * scaleX,
       );
 
-      // Crop the image
       final cropped = img.copyCrop(
         originalImage,
         x: croppedRect.left.toInt(),
@@ -188,29 +187,52 @@ class _CaptureWithBoundingBoxPageState
                   ),
                 ),
                 Positioned(
-                  top: 40,
-                  right: 20,
-                  child: IconButton(
-                    icon: Icon(
-                      _isFlashOn ? Icons.flash_on : Icons.flash_off,
-                      color: Colors.white,
-                      size: 30,
-                    ),
-                    onPressed: _toggleFlash,
-                  ),
-                ),
-                Positioned(
-                  bottom: 50,
-                  child: GestureDetector(
-                    onTap: _captureImage,
-                    child: Container(
-                      width: 70,
-                      height: 70,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
+                  bottom: 40,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Flash Toggle Button in Circle
+                      GestureDetector(
+                        onTap: _toggleFlash,
+                        child: Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            color:
+                                _isFlashOn ? Colors.white : Colors.transparent,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: Center(
+                            child: Icon(
+                              _isFlashOn ? Icons.flash_on : Icons.flash_off,
+                              color: _isFlashOn ? Colors.black : Colors.white,
+                              size: 30,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                      SizedBox(width: 20),
+                      // Circular Capture Button
+                      GestureDetector(
+                        onTap: _captureImage,
+                        child: Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Icon(
+                              Icons.camera_alt,
+                              color: Colors.black,
+                              size: 30,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
