@@ -67,11 +67,6 @@ class _CaptureWithBoundingBoxPageState
       final originalImage = img.decodeImage(bytes);
       if (originalImage == null) return null;
 
-      // Get screen size and camera preview size
-      final previewSize = _cameraController.value.previewSize!;
-      final previewWidth = previewSize.height;
-      final previewHeight = previewSize.width;
-
       final screenWidth = MediaQuery.of(context).size.width;
       final screenHeight = MediaQuery.of(context).size.height;
 
