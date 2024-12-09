@@ -3,8 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:beaver_meter/database_helper.dart';
 import 'package:beaver_meter/models/reading.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:beaver_meter/pages/capture_with_bounding_box_page.dart'; // Import bounding box page
 
 import '../validators/validator.dart';
 
@@ -69,48 +68,32 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
     }
   }
 
-  // Image capture
-  Future<XFile?> _captureImage() async {
-    final ImagePicker _picker = ImagePicker();
-    try {
-      return await _picker.pickImage(source: ImageSource.camera);
-    } catch (e) {
-      // Handle capture error
-      debugPrint('Image capture failed: $e');
-      return null;
+  Future<void> _scanReading() async {
+    // Navigate to the bounding box page
+    final String? recognizedText = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CaptureWithBoundingBoxPage(),
+      ),
+    );
+
+    // Process the returned text
+    if (recognizedText != null && recognizedText.isNotEmpty) {
+      final int? readingValue = _extractNumber(recognizedText);
+      _updateReadingValue(readingValue, context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to recognize text. Please try again.')),
+      );
     }
   }
 
-// Preprocessing
-  Future<InputImage?> _preprocessImage(String imagePath) async {
-    // Add preprocessing logic here
-    return InputImage.fromFilePath(imagePath);
-  }
-
-// Text recognition
-  Future<String> _recognizeText(InputImage inputImage) async {
-    final TextRecognizer textRecognizer =
-        TextRecognizer(script: TextRecognitionScript.latin);
-    try {
-      final RecognizedText recognizedText =
-          await textRecognizer.processImage(inputImage);
-      return recognizedText.text;
-    } catch (e) {
-      debugPrint('Text recognition failed: $e');
-      return '';
-    } finally {
-      textRecognizer.close();
-    }
-  }
-
-// Number extraction
   int? _extractNumber(String text) {
     final RegExp numberRegExp = RegExp(r'\d+');
     final match = numberRegExp.firstMatch(text);
     return match != null ? int.tryParse(match.group(0)!) : null;
   }
 
-// UI updates and error handling
   void _updateReadingValue(int? value, BuildContext context) {
     if (value != null) {
       setState(() {
@@ -121,27 +104,14 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
         readingValueController.text = '';
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to recognize text. Please try again.')),
+        SnackBar(content: Text('No valid numbers found. Please try again.')),
       );
     }
   }
 
-  Future<void> _scanReading() async {
-    final XFile? image = await _captureImage();
-    if (image == null) return; // User canceled
-
-    final InputImage? inputImage = await _preprocessImage(image.path);
-    if (inputImage == null) return;
-
-    final String recognizedText = await _recognizeText(inputImage);
-    final int? readingValue = _extractNumber(recognizedText);
-    _updateReadingValue(readingValue, context);
-  }
-
   Future<void> _saveReading(BuildContext context) async {
     if (!_formKey.currentState!.validate()) {
-      // Stop if individual field validations fail
-      return;
+      return; // Stop if field validations fail
     }
 
     final readingValue = readingValueController.text;
@@ -151,14 +121,13 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
     final crossFieldError = await Validator.validateReading(
         widget.meterId, readingValue, readingDate);
     if (crossFieldError != null) {
-      // Show a SnackBar with the cross-field validation error
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(crossFieldError)),
       );
-      return; // Stop saving if cross-field validation fails
+      return;
     }
 
-    // If all validations pass, proceed to save the reading
+    // Save the reading
     final reading = Reading(
       meterId: widget.meterId,
       value: int.parse(readingValue),
@@ -209,7 +178,7 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
                   if (int.tryParse(value) == null || int.parse(value) <= 0) {
                     return 'Reading value must be a positive number';
                   }
-                  return null; // Validation passed
+                  return null;
                 },
               ),
               SizedBox(height: 20),
@@ -227,7 +196,7 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
                   if (value == null || value.isEmpty) {
                     return 'Date cannot be empty';
                   }
-                  return null; // Validation passed
+                  return null;
                 },
               ),
               SizedBox(height: 20),
