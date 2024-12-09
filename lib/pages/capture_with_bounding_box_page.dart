@@ -14,8 +14,11 @@ class _CaptureWithBoundingBoxPageState
     extends State<CaptureWithBoundingBoxPage> {
   late CameraController _cameraController;
   Future<void>? _initializeControllerFuture;
-  final GlobalKey _boundingBoxKey = GlobalKey();
   bool _isControllerInitialized = false;
+
+  // Bounding box width and height as class-level variables
+  double bboxWidth = 200.0;
+  double bboxHeight = 200.0;
 
   @override
   void initState() {
@@ -30,6 +33,8 @@ class _CaptureWithBoundingBoxPageState
           CameraController(cameras.first, ResolutionPreset.high);
       _initializeControllerFuture = _cameraController.initialize();
       await _initializeControllerFuture;
+      // Set the flash mode to off
+      await _cameraController.setFlashMode(FlashMode.off);
       setState(() => _isControllerInitialized = true);
     } catch (e) {
       debugPrint('Camera initialization failed: $e');
@@ -41,11 +46,9 @@ class _CaptureWithBoundingBoxPageState
     if (!_isControllerInitialized) return;
     try {
       final image = await _cameraController.takePicture();
-      final renderBox =
-          _boundingBoxKey.currentContext!.findRenderObject() as RenderBox;
-      final screenArea = renderBox.localToGlobal(Offset.zero) & renderBox.size;
 
-      final croppedImage = await _cropImage(File(image.path), screenArea);
+      // Crop the captured image using the bounding box dimensions
+      final croppedImage = await _cropImage(File(image.path));
       if (croppedImage != null) {
         final extractedText = await _processImage(croppedImage);
         Navigator.pop(context, extractedText);
@@ -58,26 +61,35 @@ class _CaptureWithBoundingBoxPageState
     }
   }
 
-  Future<File?> _cropImage(File imageFile, Rect screenArea) async {
+  Future<File?> _cropImage(File imageFile) async {
     try {
       final bytes = await imageFile.readAsBytes();
       final originalImage = img.decodeImage(bytes);
       if (originalImage == null) return null;
 
-      // Get the camera preview size
+      // Get screen size and camera preview size
       final previewSize = _cameraController.value.previewSize!;
-      final scaleX = originalImage.width / previewSize.width;
-      final scaleY = originalImage.height / previewSize.height;
+      final previewWidth = previewSize.height;
+      final previewHeight = previewSize.width;
 
-      // Calculate the scaled coordinates of the bounding box
-      final croppedRect = Rect.fromLTWH(
-        screenArea.left * scaleX,
-        screenArea.top * scaleY,
-        screenArea.width * scaleX,
-        screenArea.height * scaleY,
+      final screenWidth = MediaQuery.of(context).size.width;
+      final screenHeight = MediaQuery.of(context).size.height;
+
+      // Scale to the captured image resolution
+      final scaleX = originalImage.width / screenWidth;
+      final scaleY = originalImage.height / screenHeight;
+
+      // Calculate bounding box position dynamically
+      final centerX = screenWidth / 2;
+      final centerY = screenHeight / 2;
+
+      final croppedRect = Rect.fromCenter(
+        center: Offset(centerX * scaleX, centerY * scaleY),
+        width: bboxWidth * scaleX,
+        height: bboxHeight * scaleX,
       );
 
-      // Crop the image to the bounding box
+      // Crop the image
       final cropped = img.copyCrop(
         originalImage,
         x: croppedRect.left.toInt(),
@@ -119,24 +131,37 @@ class _CaptureWithBoundingBoxPageState
 
   @override
   Widget build(BuildContext context) {
+    // Calculate the bounding box dynamically in the build method
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final boundingBox = Rect.fromCenter(
+      center: Offset(screenWidth / 2, screenHeight / 2),
+      width: bboxWidth,
+      height: bboxHeight,
+    );
+
     return Scaffold(
-      appBar: AppBar(title: Text('Capture with Bounding Box')),
       body: _isControllerInitialized
           ? Stack(
               children: [
-                CameraPreview(_cameraController),
-                Positioned(
-                  key: _boundingBoxKey,
-                  left: 50,
-                  top: 150,
+                // Camera Preview that fits within the screen width
+                Center(
+                  child: AspectRatio(
+                    aspectRatio: _cameraController.value.previewSize!.height /
+                        _cameraController.value.previewSize!.width,
+                    child: CameraPreview(_cameraController),
+                  ),
+                ),
+                // Bounding Box Overlay
+                Positioned.fromRect(
+                  rect: boundingBox,
                   child: Container(
-                    width: 200,
-                    height: 200,
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.red, width: 2),
                     ),
                   ),
                 ),
+                // Capture Button
                 Positioned(
                   bottom: 50,
                   left: (MediaQuery.of(context).size.width / 2) - 50,
