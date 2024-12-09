@@ -69,70 +69,54 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
     }
   }
 
-  Future<void> _scanReading() async {
+  // Image capture
+  Future<XFile?> _captureImage() async {
     final ImagePicker _picker = ImagePicker();
-
     try {
-      // Capture image from camera
-      final XFile? image = await _picker.pickImage(source: ImageSource.camera);
+      return await _picker.pickImage(source: ImageSource.camera);
+    } catch (e) {
+      // Handle capture error
+      debugPrint('Image capture failed: $e');
+      return null;
+    }
+  }
 
-      if (image == null) {
-        // User canceled the image capture
-        return;
-      }
+// Preprocessing
+  Future<InputImage?> _preprocessImage(String imagePath) async {
+    // Add preprocessing logic here
+    return InputImage.fromFilePath(imagePath);
+  }
 
-      // Create an InputImage for ML Kit
-      final InputImage inputImage = InputImage.fromFilePath(image.path);
-
-      // Initialize the text recognizer
-      final TextRecognizer textRecognizer =
-          TextRecognizer(script: TextRecognitionScript.latin);
-
-      // Process the image to recognize text
+// Text recognition
+  Future<String> _recognizeText(InputImage inputImage) async {
+    final TextRecognizer textRecognizer =
+        TextRecognizer(script: TextRecognitionScript.latin);
+    try {
       final RecognizedText recognizedText =
           await textRecognizer.processImage(inputImage);
-
-      // Extract numbers from the recognized text
-      String extractedText = recognizedText.text;
-      final RegExp numberRegExp = RegExp(r'\d+');
-      final match = numberRegExp.firstMatch(extractedText);
-
-      if (match != null) {
-        String numberString = match.group(0)!;
-
-        // Try parsing the numberString to an integer
-        int? readingValue = int.tryParse(numberString);
-
-        if (readingValue != null) {
-          // Update the reading value controller with the integer value
-          setState(() {
-            readingValueController.text = readingValue.toString();
-          });
-        } else {
-          // Parsing failed
-          setState(() {
-            readingValueController.text = '';
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text('Failed to recognize text. Please try again.')),
-          );
-        }
-      } else {
-        // No numbers found in the text
-        setState(() {
-          readingValueController.text = '';
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Failed to recognize text. Please try again.')),
-        );
-      }
-
-      // Remember to close the text recognizer
-      textRecognizer.close();
+      return recognizedText.text;
     } catch (e) {
-      // Handle any errors during image processing
+      debugPrint('Text recognition failed: $e');
+      return '';
+    } finally {
+      textRecognizer.close();
+    }
+  }
+
+// Number extraction
+  int? _extractNumber(String text) {
+    final RegExp numberRegExp = RegExp(r'\d+');
+    final match = numberRegExp.firstMatch(text);
+    return match != null ? int.tryParse(match.group(0)!) : null;
+  }
+
+// UI updates and error handling
+  void _updateReadingValue(int? value, BuildContext context) {
+    if (value != null) {
+      setState(() {
+        readingValueController.text = value.toString();
+      });
+    } else {
       setState(() {
         readingValueController.text = '';
       });
@@ -140,6 +124,18 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
         SnackBar(content: Text('Failed to recognize text. Please try again.')),
       );
     }
+  }
+
+  Future<void> _scanReading() async {
+    final XFile? image = await _captureImage();
+    if (image == null) return; // User canceled
+
+    final InputImage? inputImage = await _preprocessImage(image.path);
+    if (inputImage == null) return;
+
+    final String recognizedText = await _recognizeText(inputImage);
+    final int? readingValue = _extractNumber(recognizedText);
+    _updateReadingValue(readingValue, context);
   }
 
   Future<void> _saveReading(BuildContext context) async {
