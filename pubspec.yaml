@@ -45,7 +45,7 @@ dependencies:
   google_mlkit_text_recognition: ^0.14.0
   image_picker: ^1.1.2
   image: ^4.3.0
-  camera: ^0.11.0+2
+  region_of_interest: ^0.0.1
 
 dev_dependencies:
   flutter_test:
