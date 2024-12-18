@@ -166,14 +166,15 @@ class _MeterDetailPageState extends State<MeterDetailPage> {
                 leading: Icon(Icons.money, color: Colors.orange),
                 title: Text('Prices'),
                 trailing: Icon(Icons.arrow_forward_ios),
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) =>
                           PricesPage(meter: meter), // Pass meter ID
                     ),
                   );
+                  await _fetchLastMonthData();
                 },
               ),
             ),
@@ -182,15 +183,16 @@ class _MeterDetailPageState extends State<MeterDetailPage> {
               child: ListTile(
                 leading: Icon(Icons.add, color: Colors.blue),
                 title: Text('Add Reading'),
-                onTap: () {
+                onTap: () async {
                   // Navigate to CreateReadingPage
-                  Navigator.push(
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => CreateReadingPage(
                           meterId: meter.id!), // Pass meter ID
                     ),
                   );
+                  await _fetchLastMonthData();
                 },
               ),
             ),

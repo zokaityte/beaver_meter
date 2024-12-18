@@ -42,6 +42,11 @@ dependencies:
   provider: ^6.1.2
   money2: ^3.3.0
   fl_chart: ^0.69.2
+  google_mlkit_text_recognition: ^0.14.0
+  image_picker: ^1.1.2
+  image: ^4.3.0
+  region_of_interest: ^0.0.1
+  flex_color_scheme: ^8.0.2
 
 dev_dependencies:
   flutter_test:

@@ -28,6 +28,7 @@ class _MetersPageState extends State<MetersPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
       body: FutureBuilder<List<Meter>>(
         future: metersFuture,
         builder: (context, snapshot) {
@@ -43,7 +44,8 @@ class _MetersPageState extends State<MetersPage> {
 
           if (meters.isEmpty) {
             return Center(
-                child: Text('No meters found. Add one using the button below.'));
+                child:
+                    Text('No meters found. Add one using the button below.'));
           }
 
           return GridView.builder(

@@ -62,8 +62,8 @@ class _EditReadingPageState extends State<EditReadingPage> {
     // Perform cross-field validation
     final crossFieldError = await Validator.validateReading(
       widget.reading.meterId, // Meter ID
-      readingValue,           // New reading value
-      readingDate,            // New reading date
+      readingValue, // New reading value
+      readingDate, // New reading date
       originalDate: widget.reading.date, // Original reading date (optional)
     );
 
@@ -125,7 +125,8 @@ class _EditReadingPageState extends State<EditReadingPage> {
         Navigator.pop(context, {'action': 'delete'});
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete reading. Please try again.')),
+          SnackBar(
+              content: Text('Failed to delete reading. Please try again.')),
         );
       }
     }
@@ -187,7 +188,7 @@ class _EditReadingPageState extends State<EditReadingPage> {
                 },
               ),
               SizedBox(height: 20),
-              ElevatedButton(
+              FilledButton(
                 onPressed: () => _saveReading(context),
                 child: Text('Save Changes'),
               ),

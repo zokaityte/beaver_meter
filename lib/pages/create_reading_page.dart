@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:beaver_meter/database_helper.dart';
 import 'package:beaver_meter/models/reading.dart';
+import 'package:beaver_meter/pages/capture_with_bounding_box_page.dart'; // Import bounding box page
 
 import '../validators/validator.dart';
 
@@ -48,7 +49,8 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
       final formattedDate = DateFormat('yyyy-MM-dd').format(pickedDate);
 
       // Validate if the selected date already exists for the meter
-      final dateError = await Validator.validateReadingDate(widget.meterId, formattedDate);
+      final dateError =
+          await Validator.validateReadingDate(widget.meterId, formattedDate);
 
       if (dateError != null) {
         // Show an error message if the date already exists
@@ -66,27 +68,66 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
     }
   }
 
+  Future<void> _scanReading() async {
+    // Navigate to the bounding box page
+    final String? recognizedText = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CaptureWithBoundingBoxPage(),
+      ),
+    );
+
+    // Process the returned text
+    if (recognizedText != null && recognizedText.isNotEmpty) {
+      final int? readingValue = _extractNumber(recognizedText);
+      _updateReadingValue(readingValue, context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to recognize text. Please try again.')),
+      );
+    }
+  }
+
+  int? _extractNumber(String text) {
+    final RegExp numberRegExp = RegExp(r'\d+');
+    final match = numberRegExp.firstMatch(text);
+    return match != null ? int.tryParse(match.group(0)!) : null;
+  }
+
+  void _updateReadingValue(int? value, BuildContext context) {
+    if (value != null) {
+      setState(() {
+        readingValueController.text = value.toString();
+      });
+    } else {
+      setState(() {
+        readingValueController.text = '';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No valid numbers found. Please try again.')),
+      );
+    }
+  }
 
   Future<void> _saveReading(BuildContext context) async {
     if (!_formKey.currentState!.validate()) {
-      // Stop if individual field validations fail
-      return;
+      return; // Stop if field validations fail
     }
 
     final readingValue = readingValueController.text;
     final readingDate = readingDateController.text;
 
     // Perform cross-field validation
-    final crossFieldError = await Validator.validateReading(widget.meterId, readingValue, readingDate);
+    final crossFieldError = await Validator.validateReading(
+        widget.meterId, readingValue, readingDate);
     if (crossFieldError != null) {
-      // Show a SnackBar with the cross-field validation error
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(crossFieldError)),
       );
-      return; // Stop saving if cross-field validation fails
+      return;
     }
 
-    // If all validations pass, proceed to save the reading
+    // Save the reading
     final reading = Reading(
       meterId: widget.meterId,
       value: int.parse(readingValue),
@@ -107,7 +148,6 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -123,9 +163,7 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
                 decoration: InputDecoration(
                   labelText: 'Enter Reading Value',
                   suffixIcon: IconButton(
-                    onPressed: () {
-                      // Placeholder for OCR image selection
-                    },
+                    onPressed: _scanReading,
                     icon: Icon(Icons.camera_alt),
                   ),
                 ),
@@ -140,7 +178,7 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
                   if (int.tryParse(value) == null || int.parse(value) <= 0) {
                     return 'Reading value must be a positive number';
                   }
-                  return null; // Validation passed
+                  return null;
                 },
               ),
               SizedBox(height: 20),
@@ -158,11 +196,11 @@ class _CreateReadingPageState extends State<CreateReadingPage> {
                   if (value == null || value.isEmpty) {
                     return 'Date cannot be empty';
                   }
-                  return null; // Validation passed
+                  return null;
                 },
               ),
               SizedBox(height: 20),
-              ElevatedButton(
+              FilledButton(
                 onPressed: () => _saveReading(context),
                 child: Text('Save Reading'),
               ),

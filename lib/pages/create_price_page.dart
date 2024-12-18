@@ -118,32 +118,30 @@ class _CreatePricePageState extends State<CreatePricePage> {
         child: Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment:
+                CrossAxisAlignment.start, // Align to start for readability
             children: [
               TextFormField(
                 controller: pricePerUnitController,
                 decoration: InputDecoration(
                   labelText: 'Price per ${widget.unit}',
                   prefix: Row(
-                    mainAxisSize:
-                        MainAxisSize.min, // Ensures prefix fits its content
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         currencySymbol,
                         style: TextStyle(
                           fontSize: 16,
-                          color:
-                              Theme.of(context).hintColor, // Match label color
+                          color: Theme.of(context).hintColor,
                         ),
                       ),
-                      const SizedBox(
-                          width: 8), // Add space between the symbol and text
+                      const SizedBox(width: 8),
                     ],
                   ),
                 ),
                 keyboardType: TextInputType.number,
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(
-                      RegExp(r'^\d*\.?\d*')), // Allow digits and dots
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                 ],
                 validator: (value) {
                   if (value == null ||
@@ -154,31 +152,28 @@ class _CreatePricePageState extends State<CreatePricePage> {
                   return null;
                 },
               ),
+              const SizedBox(height: 16), // Add space between fields
               TextFormField(
                 controller: basePriceController,
                 decoration: InputDecoration(
                   labelText: 'Base Price (per month)',
                   prefix: Row(
-                    mainAxisSize:
-                        MainAxisSize.min, // Ensures prefix fits its content
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         currencySymbol,
                         style: TextStyle(
                           fontSize: 16,
-                          color:
-                              Theme.of(context).hintColor, // Match label color
+                          color: Theme.of(context).hintColor,
                         ),
                       ),
-                      const SizedBox(
-                          width: 8), // Add space between the symbol and text
+                      const SizedBox(width: 8),
                     ],
                   ),
                 ),
                 keyboardType: TextInputType.number,
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(
-                      RegExp(r'^\d*\.?\d*')), // Allow digits and dots
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                 ],
                 validator: (value) {
                   if (value == null ||
@@ -189,6 +184,7 @@ class _CreatePricePageState extends State<CreatePricePage> {
                   return null;
                 },
               ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: validFromController,
                 decoration: InputDecoration(
@@ -206,6 +202,7 @@ class _CreatePricePageState extends State<CreatePricePage> {
                   return null;
                 },
               ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: validToController,
                 decoration: InputDecoration(
@@ -231,10 +228,12 @@ class _CreatePricePageState extends State<CreatePricePage> {
                   return null;
                 },
               ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () => _savePrice(context),
-                child: const Text('Save Price'),
+              const SizedBox(height: 24), // Larger spacing before the button
+              Center(
+                child: FilledButton(
+                  onPressed: () => _savePrice(context),
+                  child: const Text('Save Price'),
+                ),
               ),
             ],
           ),

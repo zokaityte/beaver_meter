@@ -85,7 +85,7 @@ class _CreateMeterPageState extends State<CreateMeterPage> {
               },
             ),
             SizedBox(height: 20),
-            ElevatedButton(
+            FilledButton(
               onPressed: () async {
                 String meterName = nameController.text;
 
